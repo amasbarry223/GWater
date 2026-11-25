@@ -57,3 +57,19 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Déploiement sur Vercel
+
+Le projet est une application Angular **SPA** (client-only) qui utilise Firebase (Auth, Firestore, Storage).
+
+1. Importe le dépôt dans Vercel (`Add New… → Project`) et sélectionne `amasbarry223/GWater`.
+2. Vercel détecte automatiquement Angular. La configuration est aussi versionnée dans `vercel.json` :
+   - **Build Command** : `npm run build`
+   - **Install Command** : `npm ci`
+   - **Output Directory** : `dist/gwater/browser`
+   - **Rewrite** : toutes les routes sont redirigées vers `/index.html` (routage Angular côté client)
+3. La version Node est épinglée sur `26.x` dans `package.json` (`engines`).
+4. **Important (Firebase Auth)** : dans la console Firebase → *Authentication → Settings → Authorized domains*, ajoute le domaine Vercel (par exemple `gwater.vercel.app`, ainsi que tes domaines personnalisés et les domaines de preview si nécessaire). Sinon la connexion sera bloquée.
+5. Les règles de sécurité Firestore/Storage (`firestore.rules`, `storage.rules`) sont appliquées côté Firebase, indépendamment de l'hébergement. La clé API web Firebase est publique par design : elle ne doit pas être traitée comme un secret.
+
+Aucune variable d'environnement n'est requise pour le build.

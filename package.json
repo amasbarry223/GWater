@@ -12,6 +12,10 @@
   "private": true,
   "type": "module",
   "packageManager": "npm@11.20.0",
+  "engines": {
+    "node": "26.x",
+    "npm": ">=11"
+  },
   "dependencies": {
     "@angular/cdk": "^22.3.0",
     "@angular/common": "^22.3.0",
