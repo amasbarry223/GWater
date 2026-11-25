@@ -1069,12 +1069,21 @@ export class VentesComponent implements OnInit {
     this.printService.printRecu(v, this.appSettings);
   }
 
-  partagerWhatsApp(v: Vente) {
+  async partagerWhatsApp(v: Vente) {
     const client = this.clients().find(c => c.id === v.clientId);
-    this.waService.partagerFacture(
-      { numero: v.numero, total: v.total, clientNom: v.clientNom },
-      client?.whatsapp || client?.telephone || ''
-    );
+    try {
+      const res = await this.waService.partagerFacture(
+        { id: v.id, numero: v.numero, total: v.total, clientNom: v.clientNom, clientId: v.clientId },
+        client?.whatsapp || client?.telephone || ''
+      );
+      if (res.mode === 'openwa') {
+        this.toastService.success(`Facture ${v.numero} envoyée sur WhatsApp.`);
+      } else {
+        this.toastService.info(`WhatsApp Web ouvert pour la facture ${v.numero}.`);
+      }
+    } catch (err) {
+      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de l\'envoi WhatsApp.');
+    }
   }
 
   exportVentesPdf() {

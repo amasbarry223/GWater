@@ -28,6 +28,10 @@ export interface Client {
   solde: number;
   consignesDetenues?: number;
   statut: 'actif' | 'suspendu' | 'archive';
+  whatsappOptOut?: boolean;
+  whatsappChatId?: string;
+  derniereRelanceAt?: Date;
+  dernierNiveauRelance?: string;
   notes?: string;
   createdAt?: Date;
   createdBy?: string;

@@ -57,7 +57,7 @@ service cloud.firestore {
       allow read: if isActiveUser();
       allow create: if isVendeur();
       allow update: if isAdmin() ||
-        (isVendeur() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plafondCredit', 'statut'])) ||
+        (isVendeur() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plafondCredit', 'statut', 'whatsappOptOut'])) ||
         (isComptable() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['solde']));
       allow delete: if false;
     }
@@ -156,7 +156,18 @@ service cloud.firestore {
     // Paramètres globaux
     match /parametres/{id} {
       allow read: if isActiveUser();
-      allow write: if isSuperAdmin();
+      allow write: if isSuperAdmin() || (id == 'whatsapp' && isAdmin());
+    }
+
+    // Relances WhatsApp — écrites uniquement par le backend (Admin SDK)
+    match /relances/{id} {
+      allow read: if isActiveUser();
+      allow write: if false;
+    }
+
+    // Journal de déduplication des webhooks OpenWA — backend uniquement
+    match /whatsapp_events/{id} {
+      allow read, write: if false;
     }
 
     // Périodes comptables

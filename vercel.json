@@ -3,9 +3,15 @@
   "buildCommand": "npm run build",
   "installCommand": "npm ci",
   "outputDirectory": "dist/gwater/browser",
+  "functions": {
+    "api/**/*.ts": { "maxDuration": 300 }
+  },
+  "crons": [
+    { "path": "/api/cron/relances", "schedule": "0 9 * * 1-6" }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

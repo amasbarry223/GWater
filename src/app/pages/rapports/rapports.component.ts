@@ -11,8 +11,10 @@ import { Vente, Produit, Client, Paiement, Depense, Livraison } from '../../core
 type Onglet = 'ventes' | 'creances' | 'stock' | 'caisse' | 'depenses' | 'livraisons';
 
 interface BalanceAgee {
+  clientId?: string;
   clientNom: string;
   telephone: string;
+  whatsapp?: string;
   total: number;
   j0_30: number;
   j31_60: number;
@@ -621,8 +623,10 @@ export class RapportsComponent implements OnInit {
       const key = v.clientId || v.clientNom;
       if (!map[key]) {
         map[key] = {
+          clientId: client?.id || v.clientId,
           clientNom: client?.nom || v.clientNom,
           telephone: client?.telephone || '',
+          whatsapp: client?.whatsapp,
           total: 0, j0_30: 0, j31_60: 0, jPlus60: 0
         };
       }
@@ -763,9 +767,17 @@ export class RapportsComponent implements OnInit {
     };
   }
 
-  relanceWhatsapp(b: BalanceAgee) {
-    this.waService.openRelance({ nom: b.clientNom, telephone: b.telephone, solde: b.total });
-    this.toast.success(`Relance WhatsApp ouverte pour ${b.clientNom}`);
+  async relanceWhatsapp(b: BalanceAgee) {
+    try {
+      const res = await this.waService.relancer({
+        id: b.clientId, nom: b.clientNom, telephone: b.telephone, whatsapp: b.whatsapp, solde: b.total,
+      });
+      this.toast.success(res.mode === 'openwa'
+        ? `Relance WhatsApp envoyée à ${b.clientNom}`
+        : `Relance WhatsApp ouverte pour ${b.clientNom}`);
+    } catch (err) {
+      this.toast.error(err instanceof Error ? err.message : 'Erreur lors de la relance WhatsApp');
+    }
   }
 
   exportPdf() {

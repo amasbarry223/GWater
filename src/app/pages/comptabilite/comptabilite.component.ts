@@ -881,7 +881,7 @@ export class ComptabiliteComponent implements OnInit {
     { label: '31–60 jours', montant: 0, nb: 0, color: '#ef4444' },
     { label: '+60 jours', montant: 0, nb: 0, color: '#b91c1c' },
   ];
-  creances: { nom: string; telephone: string; j30: number; j60: number; j60p: number }[] = [];
+  creances: { id?: string; nom: string; telephone: string; whatsapp?: string; j30: number; j60: number; j60p: number }[] = [];
   periodes: PeriodeComptable[] = [];
 
   journalLignes: JournalLigne[] = [];
@@ -1130,7 +1130,7 @@ export class ComptabiliteComponent implements OnInit {
 
   private recomputeCreances() {
     const now = Date.now();
-    const map: Record<string, { nom: string; telephone: string; j30: number; j60: number; j60p: number }> = {};
+    const map: Record<string, { id?: string; nom: string; telephone: string; whatsapp?: string; j30: number; j60: number; j60p: number }> = {};
     const impayees = this.rawVentes.filter(v => v.statut !== 'annulee' && (v.soldeRestant || 0) > 0);
 
     for (const v of impayees) {
@@ -1138,8 +1138,10 @@ export class ComptabiliteComponent implements OnInit {
       const key = v.clientId || v.clientNom;
       if (!map[key]) {
         map[key] = {
+          id: client?.id || v.clientId,
           nom: client?.nom || v.clientNom,
           telephone: client?.telephone || '',
+          whatsapp: client?.whatsapp,
           j30: 0, j60: 0, j60p: 0
         };
       }
@@ -1445,7 +1447,18 @@ export class ComptabiliteComponent implements OnInit {
     const w = window.open('', '_blank')!; w.document.write(html); w.document.close(); w.print();
   }
 
-  relancerWhatsApp(c: { nom: string; telephone: string; j30: number; j60: number; j60p: number }) {
-    this.waService.openRelance({ nom: c.nom, telephone: c.telephone, solde: c.j30 + c.j60 + c.j60p });
+  async relancerWhatsApp(c: { id?: string; nom: string; telephone: string; whatsapp?: string; j30: number; j60: number; j60p: number }) {
+    try {
+      const res = await this.waService.relancer({
+        id: c.id, nom: c.nom, telephone: c.telephone, whatsapp: c.whatsapp, solde: c.j30 + c.j60 + c.j60p,
+      });
+      if (res.mode === 'openwa') {
+        this.toastService.success(`Relance WhatsApp envoyée à ${c.nom}.`);
+      } else {
+        this.toastService.info(`WhatsApp Web ouvert pour ${c.nom}.`);
+      }
+    } catch (err) {
+      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de la relance WhatsApp.');
+    }
   }
 }

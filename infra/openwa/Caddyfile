@@ -1,0 +1,5 @@
+# Remplacer par votre sous-domaine pointant vers le VPS
+wa.votre-domaine.com {
+  reverse_proxy openwa:2785
+}
+

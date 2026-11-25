@@ -4,8 +4,13 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { DataService } from '../../core/data.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
+import {
+  WhatsappService, WhatsappApiError, Relance, STATUT_RELANCE_LABELS, STATUT_RELANCE_BADGES,
+} from '../../core/whatsapp.service';
+import { NIVEAU_LABELS } from '../../core/whatsapp.utils';
 import { Client, Vente, AppSettings, ConsigneMouvement } from '../../core/models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 
 interface FactureDemo {
   numero: string;
@@ -267,8 +272,16 @@ interface CsvRow {
             <div style="width:12px;height:12px;background:#fee2e2;border:2px solid #ef4444;border-radius:2px"></div>
             <span style="font-size:12px">> 60 jours</span>
           </div>
-          <div style="margin-left:auto;font-weight:700;color:#ef4444;font-size:16px">
-            Total : {{ totalImpayes() | number:'1.0-0' }} FCFA
+          <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+            <div style="font-weight:700;color:#ef4444;font-size:16px">
+              Total : {{ totalImpayes() | number:'1.0-0' }} FCFA
+            </div>
+            @if (waActif() && impayesList().length > 0 && authService.hasRole('superadmin', 'admin', 'comptable')) {
+              <button class="btn btn-sm" (click)="relancerTousImpayes()" [disabled]="relancingBulk()"
+                      style="background:#22c55e;color:white;border:1px solid #22c55e;border-radius:6px;padding:6px 12px;font-size:12px">
+                {{ relancingBulk() ? 'Envoi en cours…' : '📱 Tout relancer (' + impayesList().length + ')' }}
+              </button>
+            }
           </div>
         </div>
       </div>
@@ -307,10 +320,14 @@ interface CsvRow {
                 <td><span style="color:#ef4444;font-weight:700;font-size:14px">{{ client.solde | number:'1.0-0' }} FCFA</span></td>
                 <td><span [class]="'badge ' + agingBadge(client.joursImpaye)" style="font-size:12px">{{ client.joursImpaye }}j</span></td>
                 <td>
-                  <a [href]="whatsappUrl(client)" target="_blank" class="btn btn-sm"
-                     style="text-decoration:none;background:#22c55e;color:white;border:1px solid #22c55e;border-radius:6px;padding:5px 10px;font-size:12px">
-                    📱 Relancer WhatsApp
-                  </a>
+                  @if (client.whatsappOptOut) {
+                    <span class="badge badge-secondary" title="Le client a répondu STOP">STOP (opt-out)</span>
+                  } @else {
+                    <button class="btn btn-sm" (click)="relancerClient(client)" [disabled]="relancingId() === client.id"
+                            style="background:#22c55e;color:white;border:1px solid #22c55e;border-radius:6px;padding:5px 10px;font-size:12px">
+                      {{ relancingId() === client.id ? 'Envoi…' : '📱 Relancer WhatsApp' }}
+                    </button>
+                  }
                 </td>
               </tr>
             }
@@ -606,6 +623,34 @@ interface CsvRow {
           </table>
         </div>
 
+        @if (clientRelances().length > 0) {
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">
+              Dernières relances WhatsApp
+            </div>
+            <table class="gw-table" style="font-size:12px">
+              <thead>
+                <tr><th>Date</th><th>Niveau</th><th>Montant</th><th>Statut</th><th>Réponse</th></tr>
+              </thead>
+              <tbody>
+                @for (r of clientRelances(); track r.id) {
+                  <tr>
+                    <td>{{ r.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ niveauLabels[r.niveau] || r.niveau }}</td>
+                    <td>{{ r.montant | number:'1.0-0' }} F</td>
+                    <td><span [class]="'badge ' + (statutRelanceBadges[r.statut] || 'badge-secondary')">
+                      {{ statutRelanceLabels[r.statut] || r.statut }}
+                    </span></td>
+                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="r.reponse || r.erreur || ''">
+                      {{ r.reponse || r.erreur || '—' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
         @if (viewingClient()!.notes) {
           <div style="padding:12px;background:#f8fafc;border-radius:8px">
             <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Notes</div>
@@ -614,13 +659,20 @@ interface CsvRow {
         }
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="viewingClient.set(null)">Fermer</button>
-        <a [href]="whatsappUrl(viewingClient()!)" target="_blank" class="btn btn-secondary"
-           style="text-decoration:none;background:#22c55e;color:white;border-color:#22c55e">
-          📱 Relance WhatsApp
-        </a>
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Fermer</button>
+        @if (viewingClient()!.solde > 0 && !viewingClient()!.whatsappOptOut) {
+          <button class="btn btn-secondary" (click)="relancerClient(viewingClient()!)" [disabled]="relancingId() === viewingClient()!.id"
+                  style="background:#22c55e;color:white;border-color:#22c55e">
+            {{ relancingId() === viewingClient()!.id ? 'Envoi…' : '📱 Relance WhatsApp' }}
+          </button>
+        }
+        @if (waActif() && viewingClient()!.id && !viewingClient()!.whatsappOptOut) {
+          <button class="btn btn-secondary" (click)="envoyerRelevePdf(viewingClient()!)" [disabled]="sendingReleve()">
+            {{ sendingReleve() ? 'Envoi PDF…' : '📄 Relevé WhatsApp (PDF)' }}
+          </button>
+        }
         <button class="btn btn-secondary" (click)="printReleve(viewingClient()!)">🖨️ Voir relevé</button>
-        <button class="btn btn-primary" (click)="openModal(viewingClient()!); viewingClient.set(null)">Modifier</button>
+        <button class="btn btn-primary" (click)="openModal(viewingClient()!); closeDetailModal()">Modifier</button>
       </div>
     </div>
   </div>
@@ -688,6 +740,7 @@ export class ClientsComponent implements OnInit {
   dataService = inject(DataService);
   toastService = inject(ToastService);
   authService = inject(AuthService);
+  waService = inject(WhatsappService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
@@ -702,6 +755,15 @@ export class ClientsComponent implements OnInit {
   showModal = signal(false);
   showConsigneModal = signal(false);
   viewingClient = signal<ClientExt | null>(null);
+  relancingId = signal<string | null>(null);
+  relancingBulk = signal(false);
+  sendingReleve = signal(false);
+  clientRelances = signal<Relance[]>([]);
+  waActif = signal(false);
+  private relancesSub?: Subscription;
+  readonly statutRelanceLabels = STATUT_RELANCE_LABELS;
+  readonly statutRelanceBadges = STATUT_RELANCE_BADGES;
+  readonly niveauLabels = NIVEAU_LABELS;
   showCsvModal = signal(false);
   csvPreview = signal<CsvRow[]>([]);
   activeTab = signal<'clients' | 'impayes' | 'consignes'>('clients');
@@ -757,6 +819,7 @@ export class ClientsComponent implements OnInit {
   ngOnInit() {
     this.loadClients();
     this.dataService.getSettings().then(s => { this.appSettings = s; }).catch(() => {});
+    this.waService.getSettings().then(s => { this.waActif.set(s.actif); }).catch(() => {});
     this.dataService.getConsignes().pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(data => { this.consignes.set(data); this.cdr.markForCheck(); });
   }
@@ -966,12 +1029,58 @@ export class ClientsComponent implements OnInit {
 
   totalImpayes(): number { return this.impayesList().reduce((s, c) => s + c.solde, 0); }
 
-  whatsappUrl(client: ClientExt): string {
-    const phone = (client.whatsapp || client.telephone).replace(/\D/g, '');
-    const msg = encodeURIComponent(
-      `Bonjour ${client.nom},\n\nNous vous rappelons que votre solde impayé s'élève à ${client.solde.toLocaleString('fr-FR')} FCFA.\nMerci de régulariser votre situation dans les meilleurs délais.\n\nCordialement,\nGWater Distribution`
-    );
-    return `https://wa.me/${phone}?text=${msg}`;
+  async relancerClient(client: ClientExt, forcer = false): Promise<void> {
+    if (!client.id) return;
+    this.relancingId.set(client.id);
+    try {
+      const res = await this.waService.relancer(client, { forcer, joursRetard: client.joursImpaye });
+      if (res.mode === 'openwa') {
+        this.toastService.success(`Relance WhatsApp envoyée à ${client.nom}.`);
+      } else {
+        this.toastService.info(`WhatsApp Web ouvert pour ${client.nom} (envoi manuel).`);
+      }
+    } catch (err) {
+      if (err instanceof WhatsappApiError && err.code === 'RELANCE_RECENTE') {
+        if (confirm(`${err.message}. Voulez-vous tout de même renvoyer une relance ?`)) {
+          return this.relancerClient(client, true);
+        }
+        return;
+      }
+      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de la relance WhatsApp.');
+    } finally {
+      this.relancingId.set(null);
+    }
+  }
+
+  async envoyerRelevePdf(client: ClientExt) {
+    if (!client.id) return;
+    this.sendingReleve.set(true);
+    try {
+      await this.waService.envoyerRelevePdf(client.id);
+      this.toastService.success(`Relevé PDF envoyé sur WhatsApp à ${client.nom}.`);
+    } catch (err) {
+      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de l\'envoi du relevé PDF.');
+    } finally {
+      this.sendingReleve.set(false);
+    }
+  }
+
+  async relancerTousImpayes() {
+    const ids = this.impayesList().filter(c => !c.whatsappOptOut && c.id).map(c => c.id!);
+    if (!ids.length) return;
+    if (!confirm(`Envoyer une relance WhatsApp groupée aux ${ids.length} client(s) éligible(s) ?`)) return;
+    this.relancingBulk.set(true);
+    try {
+      const r = await this.waService.relancerGroupe(ids);
+      const parts = [`${r.envoyes} envoyé(s)`];
+      if (r.aValider > 0) parts.push(`${r.aValider} mise(s) en demeure à valider`);
+      if (r.ignores.length > 0) parts.push(`${r.ignores.length} ignoré(s)`);
+      this.toastService.success('Relance groupée : ' + parts.join(', ') + '.');
+    } catch (err) {
+      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de la relance groupée.');
+    } finally {
+      this.relancingBulk.set(false);
+    }
   }
 
   printReleve(client: ClientExt) {
@@ -1139,7 +1248,21 @@ ${client.solde > 0
     }
   }
 
-  viewClient(client: ClientExt) { this.viewingClient.set(client); }
+  viewClient(client: ClientExt) {
+    this.viewingClient.set(client);
+    this.relancesSub?.unsubscribe();
+    this.clientRelances.set([]);
+    if (client.id) {
+      this.relancesSub = this.waService.watchRelancesClient(client.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: list => { this.clientRelances.set(list); this.cdr.markForCheck(); }, error: () => {} });
+    }
+  }
+
+  closeDetailModal() {
+    this.relancesSub?.unsubscribe();
+    this.viewingClient.set(null);
+  }
 
   async archiveClient(client: ClientExt) {
     if (!client.id) return;
