@@ -6,7 +6,7 @@ import { DataService } from '../../core/data.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
 import { PrintService } from '../../core/print.service';
-import { WhatsappService } from '../../core/whatsapp.service';
+import { WhatsappService, waErrorMessage } from '../../core/whatsapp.service';
 import { Vente, LigneVente, Produit, Client, Paiement, Livreur, Livraison, AppSettings } from '../../core/models';
 
 interface LigneForm {
@@ -1082,7 +1082,7 @@ export class VentesComponent implements OnInit {
         this.toastService.info(`WhatsApp Web ouvert pour la facture ${v.numero}.`);
       }
     } catch (err) {
-      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de l\'envoi WhatsApp.');
+      this.toastService.error(waErrorMessage(err, 'Erreur lors de l\'envoi WhatsApp.'));
     }
   }
 

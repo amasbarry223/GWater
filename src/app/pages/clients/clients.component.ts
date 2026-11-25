@@ -5,7 +5,7 @@ import { DataService } from '../../core/data.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
 import {
-  WhatsappService, WhatsappApiError, Relance, STATUT_RELANCE_LABELS, STATUT_RELANCE_BADGES,
+  WhatsappService, WhatsappApiError, Relance, STATUT_RELANCE_LABELS, STATUT_RELANCE_BADGES, waErrorMessage,
 } from '../../core/whatsapp.service';
 import { NIVEAU_LABELS } from '../../core/whatsapp.utils';
 import { Client, Vente, AppSettings, ConsigneMouvement } from '../../core/models';
@@ -1046,7 +1046,7 @@ export class ClientsComponent implements OnInit {
         }
         return;
       }
-      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de la relance WhatsApp.');
+      this.toastService.error(waErrorMessage(err, 'Erreur lors de la relance WhatsApp.'));
     } finally {
       this.relancingId.set(null);
     }
@@ -1059,7 +1059,7 @@ export class ClientsComponent implements OnInit {
       await this.waService.envoyerRelevePdf(client.id);
       this.toastService.success(`Relevé PDF envoyé sur WhatsApp à ${client.nom}.`);
     } catch (err) {
-      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de l\'envoi du relevé PDF.');
+      this.toastService.error(waErrorMessage(err, 'Erreur lors de l\'envoi du relevé PDF.'));
     } finally {
       this.sendingReleve.set(false);
     }
@@ -1077,7 +1077,7 @@ export class ClientsComponent implements OnInit {
       if (r.ignores.length > 0) parts.push(`${r.ignores.length} ignoré(s)`);
       this.toastService.success('Relance groupée : ' + parts.join(', ') + '.');
     } catch (err) {
-      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de la relance groupée.');
+      this.toastService.error(waErrorMessage(err, 'Erreur lors de la relance groupée.'));
     } finally {
       this.relancingBulk.set(false);
     }

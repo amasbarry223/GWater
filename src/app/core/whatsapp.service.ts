@@ -62,6 +62,17 @@ export class WhatsappApiError extends Error {
   }
 }
 
+/** Transforme une erreur WhatsApp en message lisible pour l'utilisateur. */
+export function waErrorMessage(err: unknown, fallback = 'Erreur lors de l\'action WhatsApp.'): string {
+  if (err instanceof WhatsappApiError) {
+    if (err.code === 'API_INDISPONIBLE' || err.status === 503) {
+      return '⚠️ API locale non disponible (ng serve seul). Lancez "npm run start:api" ou déployez sur Vercel.';
+    }
+    return err.message || fallback;
+  }
+  return err instanceof Error ? err.message : fallback;
+}
+
 export const STATUT_RELANCE_LABELS: Record<StatutRelance, string> = {
   a_valider: 'À valider', en_attente: 'En file', envoye: 'Envoyé', delivre: 'Délivré', lu: 'Lu',
   repondu: 'A répondu', echec: 'Échec', annule: 'Annulé',
@@ -147,7 +158,8 @@ export class WhatsappService {
       return { mode: 'openwa', statut: r.statut, niveau: r.niveau };
     } catch (err) {
       const indisponible = err instanceof WhatsappApiError
-        && (err.status === 0 || err.status === 404 || err.status >= 500 || err.code === 'WHATSAPP_INACTIF');
+        && (err.status === 0 || err.status === 503 || err.status === 404 || err.status >= 500
+          || err.code === 'WHATSAPP_INACTIF' || err.code === 'API_INDISPONIBLE');
       if (indisponible && opts.fallback !== false) {
         this.ouvrirWaMe(client, settings, opts.niveau, opts.joursRetard);
         return { mode: 'wa_me' };
@@ -213,7 +225,8 @@ export class WhatsappService {
       return { mode: 'openwa', statut: 'envoye', niveau: 'rappel' };
     } catch (err) {
       const indisponible = err instanceof WhatsappApiError
-        && (err.status === 0 || err.status === 404 || err.status >= 500 || err.code === 'WHATSAPP_INACTIF');
+        && (err.status === 0 || err.status === 503 || err.status === 404 || err.status >= 500
+          || err.code === 'WHATSAPP_INACTIF' || err.code === 'API_INDISPONIBLE');
       if (indisponible) {
         window.open(buildWaMeUrl(tel, message, settings.indicatifPays), '_blank');
         return { mode: 'wa_me' };
@@ -239,15 +252,17 @@ export class WhatsappService {
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch {
-      throw new WhatsappApiError(0, 'Serveur injoignable');
+      // Réseau injoignable → API absente (ng serve sans proxy actif)
+      throw new WhatsappApiError(0, 'API_INDISPONIBLE', 'API_INDISPONIBLE');
     }
     const isJson = (res.headers.get('content-type') || '').includes('application/json');
     const data: any = isJson ? await res.json().catch(() => null) : null;
-    if (!res.ok || !isJson) {
-      const msg = !isJson
-        ? 'Backend /api absent sur ce serveur (ng serve). Déployez sur Vercel ou lancez « vercel dev ».'
-        : data?.error || 'Service WhatsApp indisponible';
-      throw new WhatsappApiError(isJson ? res.status : (res.ok ? 404 : res.status), msg, data?.code, data?.details);
+    if (!isJson) {
+      // Le serveur a répondu du HTML (SPA Angular) → API non proxy-ée
+      throw new WhatsappApiError(503, 'API_INDISPONIBLE', 'API_INDISPONIBLE');
+    }
+    if (!res.ok) {
+      throw new WhatsappApiError(res.status, data?.error || 'Service WhatsApp indisponible', data?.code, data?.details);
     }
     return data as T;
   }

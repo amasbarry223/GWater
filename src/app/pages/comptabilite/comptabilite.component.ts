@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DataService } from '../../core/data.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
-import { WhatsappService } from '../../core/whatsapp.service';
+import { WhatsappService, waErrorMessage } from '../../core/whatsapp.service';
 import { Depense, Vente, Paiement, Produit, Client, DetteFournisseur } from '../../core/models';
 
 interface JournalLigne {
@@ -1458,7 +1458,7 @@ export class ComptabiliteComponent implements OnInit {
         this.toastService.info(`WhatsApp Web ouvert pour ${c.nom}.`);
       }
     } catch (err) {
-      this.toastService.error(err instanceof Error ? err.message : 'Erreur lors de la relance WhatsApp.');
+      this.toastService.error(waErrorMessage(err, 'Erreur lors de la relance WhatsApp.'));
     }
   }
 }

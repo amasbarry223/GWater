@@ -876,8 +876,15 @@ export class AdminComponent implements OnInit {
       const s = await this.waService.statutSession();
       if (s.connecte) this.toastService.success(`OpenWA connecté (${s.phone || 'session prête'}).`);
       else this.toastService.warning(`Statut OpenWA : ${s.status}${s.erreur ? ' — ' + s.erreur : ''}`);
-    } catch (err) {
-      this.toastService.error(err instanceof Error ? err.message : 'Impossible de joindre le serveur.');
+    } catch (err: any) {
+      if (err?.code === 'API_INDISPONIBLE' || err?.status === 503) {
+        this.toastService.warning(
+          '⚠️ API locale non disponible en mode ng serve. ' +
+          'Lancez "npm run start:api" dans un 2ᵉ terminal, ou déployez sur Vercel.'
+        );
+      } else {
+        this.toastService.error(err instanceof Error ? err.message : 'Impossible de joindre le serveur.');
+      }
     } finally {
       this.checkingWa.set(false);
     }

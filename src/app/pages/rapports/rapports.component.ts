@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ToastService } from '../../core/toast.service';
-import { WhatsappService } from '../../core/whatsapp.service';
+import { WhatsappService, waErrorMessage } from '../../core/whatsapp.service';
 import { DataService } from '../../core/data.service';
 import { AuthService } from '../../core/auth.service';
 import { Vente, Produit, Client, Paiement, Depense, Livraison } from '../../core/models';
@@ -776,7 +776,7 @@ export class RapportsComponent implements OnInit {
         ? `Relance WhatsApp envoyée à ${b.clientNom}`
         : `Relance WhatsApp ouverte pour ${b.clientNom}`);
     } catch (err) {
-      this.toast.error(err instanceof Error ? err.message : 'Erreur lors de la relance WhatsApp');
+      this.toast.error(waErrorMessage(err, 'Erreur lors de la relance WhatsApp'));
     }
   }
 
