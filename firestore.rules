@@ -1,0 +1,180 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Fonctions utilitaires RBAC (lit users/{uid} avec fallback custom claims)
+    function isAuth() {
+      return request.auth != null;
+    }
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+    function hasUserDoc() {
+      return isAuth() && exists(userDocPath());
+    }
+    function userData() {
+      return get(userDocPath()).data;
+    }
+    function isActiveUser() {
+      return isAuth() && (
+        (hasUserDoc() && userData().status == 'actif') ||
+        (!hasUserDoc() && request.auth.token.role != null)
+      );
+    }
+    function role() {
+      return hasUserDoc() ? userData().role : request.auth.token.role;
+    }
+    function isSuperAdmin() {
+      return isActiveUser() && role() == 'superadmin';
+    }
+    function isAdmin() {
+      return isActiveUser() && role() in ['admin', 'superadmin'];
+    }
+    function isVendeur() {
+      return isActiveUser() && role() in ['admin', 'superadmin', 'vendeur'];
+    }
+    function isComptable() {
+      return isActiveUser() && role() in ['admin', 'superadmin', 'comptable'];
+    }
+    function isPeriodeOuverte(periode) {
+      let path = /databases/$(database)/documents/periodes_comptables/$(periode);
+      return !exists(path) || get(path).data.statut != 'cloturee';
+    }
+
+    // Users — création hiérarchique : Superadmin -> Admin/Vendeur/Comptable, Admin -> Vendeur/Comptable
+    match /users/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSuperAdmin() ||
+        (isAdmin() && request.resource.data.role in ['vendeur', 'comptable']);
+      allow update: if isSuperAdmin() ||
+        (isAdmin() && resource.data.role in ['vendeur', 'comptable'] && request.resource.data.role in ['vendeur', 'comptable']) ||
+        (isAuth() && request.auth.uid == userId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin', 'displayName', 'mustChangePassword', 'updatedAt']));
+      allow delete: if false;
+    }
+
+    // Clients
+    match /clients/{id} {
+      allow read: if isActiveUser();
+      allow create: if isVendeur();
+      allow update: if isAdmin() ||
+        (isVendeur() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plafondCredit', 'statut'])) ||
+        (isComptable() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['solde']));
+      allow delete: if false;
+    }
+
+    // Emballages consignés (CLI-08) — journal immuable
+    match /consignes/{id} {
+      allow read: if isActiveUser();
+      allow create: if isVendeur();
+      allow update, delete: if false;
+    }
+
+    // Produits — Admin gère le catalogue ; Vendeur peut uniquement mettre à jour stock via vente
+    match /produits/{id} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin();
+      allow update: if isAdmin() ||
+        (isVendeur() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']));
+      allow delete: if false;
+    }
+
+    // Historique des prix (STK-02) — immuable
+    match /prix_historique/{id} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Mouvements stock (immuables)
+    match /mouvements_stock/{id} {
+      allow read: if isActiveUser();
+      allow create: if isVendeur();
+      allow update, delete: if false;
+    }
+
+    // Ventes
+    match /ventes/{id} {
+      allow read: if isActiveUser() && (
+        isAdmin() || isComptable() || resource.data.vendeurId == request.auth.uid
+      );
+      allow create: if isVendeur();
+      allow update: if isAdmin() || (
+        isVendeur() && resource.data.vendeurId == request.auth.uid
+        && resource.data.statut != 'annulee'
+        && request.resource.data.statut != 'annulee'
+      );
+      allow delete: if false;
+    }
+
+    // Paiements (immuables)
+    match /paiements/{id} {
+      allow read: if isActiveUser();
+      allow create: if isVendeur() || isComptable();
+      allow update, delete: if false;
+    }
+
+    // Dépenses — verrouillées si période clôturée (CPT-09)
+    match /depenses/{id} {
+      allow read: if isAdmin() || isComptable();
+      allow create: if (isAdmin() || isComptable()) && isPeriodeOuverte(request.resource.data.periode);
+      allow update: if (isAdmin() || isComptable()) && isPeriodeOuverte(resource.data.periode);
+      allow delete: if false;
+    }
+
+    // Dettes fournisseurs (CPT-04)
+    match /dettes_fournisseurs/{id} {
+      allow read, create, update: if isAdmin() || isComptable();
+      allow delete: if false;
+    }
+
+    // Livreurs
+    match /livreurs/{id} {
+      allow read: if isActiveUser();
+      allow write: if isAdmin();
+    }
+
+    // Livraisons
+    match /livraisons/{id} {
+      allow read: if isActiveUser();
+      allow create, update: if isVendeur();
+      allow delete: if false;
+    }
+
+    // Journal audit — append-only
+    match /journal_audit/{id} {
+      allow read: if isAdmin();
+      allow create: if isActiveUser();
+      allow update, delete: if false;
+    }
+
+    // Compteurs atomiques (factures + clients)
+    match /parametres/compteurs {
+      allow read: if isActiveUser();
+      allow write: if isVendeur();
+    }
+
+    // Paramètres globaux
+    match /parametres/{id} {
+      allow read: if isActiveUser();
+      allow write: if isSuperAdmin();
+    }
+
+    // Périodes comptables
+    match /periodes_comptables/{id} {
+      allow read: if isActiveUser();
+      allow write: if isAdmin() || isComptable();
+    }
+
+    // Arrêtés de caisse (immuables)
+    match /arretes_caisse/{id} {
+      allow read, create: if isComptable() || isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Transferts entre comptes (immuables)
+    match /transferts/{id} {
+      allow read, create: if isComptable() || isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}

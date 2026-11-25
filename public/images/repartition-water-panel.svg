@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 290" fill="none">
+  <defs>
+    <linearGradient id="panelBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e3f3ff"/>
+      <stop offset="55%" stop-color="#cbe7ff"/>
+      <stop offset="100%" stop-color="#a8d8ff"/>
+    </linearGradient>
+    <linearGradient id="splashRip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.88"/>
+      <stop offset="50%" stop-color="#7dd3fc" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.48"/>
+    </linearGradient>
+    <linearGradient id="iceCube" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="48%" stop-color="#bae6fd" stop-opacity="0.68"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="tiltedGlass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e0f2fe" stop-opacity="0.88"/>
+      <stop offset="28%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="65%" stop-color="#93c5fd" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="capMini" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0353c2"/>
+      <stop offset="50%" stop-color="#22a2ff"/>
+      <stop offset="100%" stop-color="#023f99"/>
+    </linearGradient>
+    <radialGradient id="dropLight" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#7dd3fc" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.5"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="280" height="290" fill="url(#panelBg)"/>
+
+  <!-- Sweeping icy water swirl arcs -->
+  <path d="M-10 42 C60 12, 130 68, 195 28 C235 4, 268 20, 290 46 L290 198 C240 218, 178 168, 132 198 C82 230, 34 166, -10 180 Z" fill="url(#splashRip)" opacity="0.55"/>
+  <path d="M20 75 C85 45, 140 95, 220 52 C255 32, 275 58, 285 95 C265 152, 215 198, 165 162 C125 134, 88 148, 20 75 Z" fill="#ffffff" opacity="0.32"/>
+
+  <!-- Tilted Crystal Bottle in upper-right -->
+  <g transform="translate(152, 12) rotate(18)">
+    <rect x="26" y="0" width="24" height="13" rx="3.5" fill="url(#capMini)"/>
+    <rect x="24" y="12" width="28" height="3.5" rx="1.5" fill="#0353c2"/>
+    <path d="M27 16 L49 16 L54 27 C66 36, 72 48, 72 64 L72 152 C72 162, 65 166, 55 166 L21 166 C11 166, 4 162, 4 152 L4 64 C4 48, 10 36, 22 27 Z" fill="url(#tiltedGlass)" stroke="#ffffff" stroke-width="1.4"/>
+    <path d="M13 48 C18 38, 24 32, 28 28 L28 156 C19 156, 13 151, 13 142 Z" fill="#ffffff" opacity="0.58"/>
+    <path d="M9 76 Q38 82 67 76" stroke="#38bdf8" stroke-width="1.2" opacity="0.55"/>
+    <path d="M9 100 Q38 106 67 100" stroke="#38bdf8" stroke-width="1.2" opacity="0.5"/>
+    <path d="M9 124 Q38 130 67 124" stroke="#38bdf8" stroke-width="1.2" opacity="0.45"/>
+  </g>
+
+  <!-- Floating Crystal Ice Cubes -->
+  <g transform="translate(92, 66) rotate(-14)">
+    <rect x="0" y="0" width="38" height="36" rx="8" fill="url(#iceCube)" stroke="#ffffff" stroke-width="1.6"/>
+    <path d="M7 9 L26 7 L14 26 Z" fill="#ffffff" opacity="0.65"/>
+    <rect x="14" y="15" width="16" height="14" rx="4" fill="#38bdf8" opacity="0.24"/>
+  </g>
+
+  <g transform="translate(128, 128) rotate(22)">
+    <rect x="0" y="0" width="30" height="28" rx="7" fill="url(#iceCube)" stroke="#ffffff" stroke-width="1.4"/>
+    <path d="M6 7 L22 6 L12 20 Z" fill="#ffffff" opacity="0.62"/>
+  </g>
+
+  <g transform="translate(208, 166) rotate(-20)">
+    <rect x="0" y="0" width="34" height="32" rx="7" fill="url(#iceCube)" stroke="#ffffff" stroke-width="1.4"/>
+    <path d="M7 8 L24 6 L12 22 Z" fill="#ffffff" opacity="0.58"/>
+  </g>
+
+  <!-- Crisp Water Splash Ribbons -->
+  <path d="M44 50 C76 82, 136 86, 186 116 C224 138, 242 184, 274 226" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.82"/>
+  <path d="M18 96 C68 118, 120 102, 170 138 C210 166, 232 214, 266 258" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.48"/>
+
+  <!-- Glistening Water Droplets -->
+  <circle cx="62" cy="40" r="4.5" fill="url(#dropLight)"/>
+  <circle cx="136" cy="34" r="3.5" fill="url(#dropLight)"/>
+  <circle cx="80" cy="118" r="5" fill="url(#dropLight)"/>
+  <circle cx="242" cy="72" r="4" fill="url(#dropLight)"/>
+  <circle cx="256" cy="138" r="5.5" fill="url(#dropLight)"/>
+  <circle cx="176" cy="196" r="4.2" fill="url(#dropLight)"/>
+  <circle cx="222" cy="242" r="6" fill="url(#dropLight)"/>
+  <circle cx="252" cy="214" r="3.5" fill="url(#dropLight)"/>
+
+  <!-- Soft Bright Mist Bottom-Left for Crisp Text Legibility -->
+  <radialGradient id="textMist" cx="24%" cy="84%" r="65%">
+    <stop offset="0%" stop-color="#edf7ff" stop-opacity="0.96"/>
+    <stop offset="68%" stop-color="#e3f3ff" stop-opacity="0.84"/>
+    <stop offset="100%" stop-color="#e3f3ff" stop-opacity="0"/>
+  </radialGradient>
+  <rect x="0" y="140" width="235" height="150" fill="url(#textMist)"/>
+</svg>

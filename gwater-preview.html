@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>GWater — Preview UI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--gw-primary:#0ea5e9;--gw-primary-dark:#0284c7;--gw-primary-light:#e0f2fe;--gw-secondary:#64748b;--gw-success:#22c55e;--gw-warning:#f59e0b;--gw-danger:#ef4444;--gw-bg:#f8fafc;--gw-surface:#fff;--gw-border:#e2e8f0;--gw-text:#1e293b;--gw-muted:#94a3b8;--gw-sidebar-w:260px;--gw-header-h:64px;--gw-radius:12px;--gw-shadow:0 1px 3px 0 rgb(0 0 0/.1),0 1px 2px -1px rgb(0 0 0/.1);--gw-shadow-md:0 4px 6px -1px rgb(0 0 0/.1),0 2px 4px -2px rgb(0 0 0/.1);--gw-shadow-lg:0 10px 15px -3px rgb(0 0 0/.1),0 4px 6px -4px rgb(0 0 0/.1)}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--gw-text);background:var(--gw-bg);-webkit-font-smoothing:antialiased}
+.gw-layout{display:flex;height:100vh;overflow:hidden}
+.gw-sidebar{width:var(--gw-sidebar-w);background:#0f172a;color:#e2e8f0;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;z-index:50}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.brand-icon{width:36px;height:36px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0}
+.brand-name{font-size:18px;font-weight:700;color:#fff;white-space:nowrap}
+.brand-sub{font-size:10px;color:#94a3b8}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.nav-group{margin-bottom:4px}
+.nav-group-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:#64748b;text-transform:uppercase;padding:8px 20px 4px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:10px 16px;color:#94a3b8;text-decoration:none;cursor:pointer;transition:all .15s;white-space:nowrap;margin:1px 8px;border-radius:8px;border:none;background:transparent;width:calc(100% - 16px);font-size:13.5px}
+.nav-link:hover{background:rgba(255,255,255,.07);color:#e2e8f0}
+.nav-link.active{background:rgba(14,165,233,.15);color:#0ea5e9}
+.nav-icon{width:20px;height:20px;flex-shrink:0}
+.nav-label{font-size:13.5px;font-weight:500}
+.nav-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px}
+.sidebar-footer{border-top:1px solid rgba(255,255,255,.08);padding:12px}
+.user-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s}
+.user-card:hover{background:rgba(255,255,255,.07)}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#2563eb);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;color:#e2e8f0}
+.user-role{font-size:11px;color:#64748b}
+.gw-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.gw-header{height:var(--gw-header-h);background:#fff;border-bottom:1px solid var(--gw-border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0;position:sticky;top:0;z-index:40}
+.header-toggle{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:none;background:transparent;cursor:pointer;color:var(--gw-secondary)}
+.header-toggle:hover{background:var(--gw-bg)}
+.header-breadcrumb{flex:1;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gw-muted)}
+.bc-current{color:var(--gw-text);font-weight:600}
+.header-actions{display:flex;align-items:center;gap:8px}
+.header-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--gw-border);background:#fff;cursor:pointer;color:var(--gw-secondary);position:relative;transition:all .15s}
+.header-btn:hover{background:var(--gw-bg);border-color:var(--gw-primary);color:var(--gw-primary)}
+.badge-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+.header-search{display:flex;align-items:center;gap:8px;background:var(--gw-bg);border:1px solid var(--gw-border);border-radius:8px;padding:0 12px;height:36px;min-width:240px}
+.header-search input{border:none;background:transparent;outline:none;font-size:13px;color:var(--gw-text);flex:1;font-family:inherit}
+.header-search input::placeholder{color:var(--gw-muted)}
+.gw-content{flex:1;overflow-y:auto;padding:24px;background:var(--gw-bg)}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.page-title{font-size:22px;font-weight:700;color:var(--gw-text)}
+.page-subtitle{font-size:13px;color:var(--gw-muted);margin-top:2px}
+.page-actions{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13.5px;font-weight:500;border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;text-decoration:none;line-height:1;font-family:inherit}
+.btn-sm{padding:5px 12px;font-size:12px;gap:4px}
+.btn-primary{background:var(--gw-primary);color:#fff}
+.btn-primary:hover{background:var(--gw-primary-dark)}
+.btn-secondary{background:#fff;color:var(--gw-secondary);border-color:var(--gw-border)}
+.btn-secondary:hover{background:var(--gw-bg)}
+.btn-warning{background:#f59e0b;color:#fff}
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.kpi-card{background:#fff;border:1px solid var(--gw-border);border-radius:var(--gw-radius);padding:20px;box-shadow:var(--gw-shadow);display:flex;flex-direction:column;gap:12px;transition:transform .15s,box-shadow .15s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--gw-shadow-md)}
+.kpi-top{display:flex;align-items:flex-start;justify-content:space-between}
+.kpi-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.kpi-trend{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;padding:3px 8px;border-radius:20px}
+.kpi-trend.up{color:#22c55e;background:#f0fdf4}
+.kpi-trend.down{color:#ef4444;background:#fef2f2}
+.kpi-value{font-size:24px;font-weight:700;color:var(--gw-text)}
+.kpi-label{font-size:12px;color:var(--gw-muted);font-weight:500}
+.gw-card{background:#fff;border:1px solid var(--gw-border);border-radius:var(--gw-radius);box-shadow:var(--gw-shadow);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--gw-border);display:flex;align-items:center;gap:12px}
+.card-title{font-size:15px;font-weight:600;color:var(--gw-text);flex:1}
+.card-subtitle{font-size:12px;color:var(--gw-muted);margin-top:2px}
+.card-body{padding:20px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-success{background:#f0fdf4;color:#16a34a}
+.badge-danger{background:#fef2f2;color:#dc2626}
+.badge-warning{background:#fffbeb;color:#d97706}
+.badge-info{background:#eff6ff;color:#2563eb}
+.badge-secondary{background:#f8fafc;color:#64748b}
+.badge-primary{background:#e0f2fe;color:#0369a1}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+.gw-table-wrapper{overflow:hidden;border-radius:var(--gw-radius);border:1px solid var(--gw-border)}
+.gw-table{width:100%;border-collapse:collapse;background:#fff;font-size:13.5px}
+.gw-table thead th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--gw-muted);background:#f8fafc;border-bottom:1px solid var(--gw-border);white-space:nowrap;cursor:pointer}
+.gw-table tbody tr:hover{background:#f8fafc}
+.gw-table tbody tr:not(:last-child) td{border-bottom:1px solid #f1f5f9}
+.gw-table tbody td{padding:12px 16px;color:var(--gw-text);vertical-align:middle}
+.gw-alert{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:10px;font-size:13.5px;border:1px solid;margin-bottom:12px}
+.alert-warning{background:#fffbeb;border-color:#fde68a;color:#b45309}
+.alert-icon{flex-shrink:0;margin-top:1px}
+.alert-content{flex:1}
+.alert-title{font-weight:600;margin-bottom:2px}
+/* Week bars */
+.week-bars{display:flex;align-items:flex-end;gap:8px;height:120px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bar{width:100%;background:linear-gradient(180deg,#0ea5e9,#2563eb);border-radius:4px 4px 0 0;min-height:4px;transition:height .3s}
+.bar-label{font-size:10px;color:#94a3b8}
+/* Toasts */
+.gw-toast-container{position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.gw-toast{background:#1e293b;color:#fff;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13.5px;min-width:280px;box-shadow:var(--gw-shadow-lg);pointer-events:all;animation:toast-in .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes toast-in{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+.toast-success .toast-icon{color:#4ade80}
+/* Modal */
+.gw-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.gw-modal{background:#fff;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);width:100%;max-height:90vh;display:flex;flex-direction:column;animation:modal-in .25s cubic-bezier(.34,1.56,.64,1)}
+.modal-lg{max-width:760px}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--gw-border);display:flex;align-items:center;gap:12px}
+.modal-title{font-size:16px;font-weight:700;flex:1}
+.modal-close{width:32px;height:32px;border-radius:8px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gw-muted)}
+.modal-close:hover{background:var(--gw-bg);color:var(--gw-text)}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--gw-border);display:flex;align-items:center;justify-content:flex-end;gap:8px;background:#f8fafc;border-radius:0 0 16px 16px}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.form-group label{font-size:13px;font-weight:500;color:var(--gw-text)}
+.form-control{width:100%;height:38px;padding:0 12px;font-size:13.5px;color:var(--gw-text);background:#fff;border:1px solid var(--gw-border);border-radius:8px;outline:none;font-family:inherit}
+.form-control:focus{border-color:var(--gw-primary);box-shadow:0 0 0 3px rgba(14,165,233,.12)}
+select.form-control{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+@keyframes modal-in{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.td-actions{display:flex;align-items:center;gap:4px}
+.nav-tab{display:flex;gap:4px;margin-bottom:20px;background:#f1f5f9;border-radius:10px;padding:4px;width:fit-content}
+.nav-tab-btn{padding:7px 16px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-size:13.5px;font-weight:500;color:#94a3b8;font-family:inherit;transition:all .15s}
+.nav-tab-btn.active{background:#fff;color:var(--gw-text);box-shadow:var(--gw-shadow)}
+</style>
+</head>
+<body>
+<div class="gw-layout">
+  <!-- SIDEBAR -->
+  <aside class="gw-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">💧</div>
+      <div>
+        <div class="brand-name">GWater</div>
+        <div class="brand-sub">Gestion d'eau</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">Principal</div>
+        <a class="nav-link active" onclick="showPage('dashboard')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Tableau de bord</span>
+        </a>
+        <a class="nav-link" onclick="showPage('clients')">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Clients</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Opérations</div>
+        <a class="nav-link" onclick="showPage('ventes')">
+          <span class="nav-icon">🛒</span>
+          <span class="nav-label">Ventes</span>
+          <span class="nav-badge">3</span>
+        </a>
+        <a class="nav-link" onclick="showPage('stock')">
+          <span class="nav-icon">📦</span>
+          <span class="nav-label">Stock</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Finance</div>
+        <a class="nav-link" onclick="showPage('compta')">
+          <span class="nav-icon">💰</span>
+          <span class="nav-label">Comptabilité</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Système</div>
+        <a class="nav-link" onclick="showPage('admin')">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Administration</span>
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">AD</div>
+        <div>
+          <div class="user-name">Admin Principal</div>
+          <div class="user-role">Administrateur</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="gw-main">
+    <!-- HEADER -->
+    <header class="gw-header">
+      <button class="header-toggle" onclick="toggleSidebar()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="header-breadcrumb">
+        <span>GWater</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+        <span class="bc-current" id="bc-title">Tableau de bord</span>
+      </div>
+      <div class="header-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#94a3b8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Rechercher...">
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" onclick="showToast('info','2 alertes stock bas non lues')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="badge-dot"></span>
+        </button>
+        <button class="header-btn" onclick="showModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#2563eb);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;cursor:pointer">AD</div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="gw-content" id="main-content">
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Tableau de bord</div>
+            <div class="page-subtitle">Bonjour Admin 👋 — Mardi, 25 Novembre 2026</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary btn-sm">📥 Export</button>
+            <button class="btn btn-primary btn-sm" onclick="showPage('ventes'); showNewVente()">+ Nouvelle vente</button>
+          </div>
+        </div>
+
+        <div class="gw-alert alert-warning" style="margin-bottom:20px">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-content">
+            <div class="alert-title">Stock bas</div>
+            Eau 1.5L — Il reste 45 bouteilles (seuil : 100). Pensez à réapprovisionner.
+          </div>
+          <button class="btn btn-warning btn-sm" onclick="showPage('stock')">Voir le stock</button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid-kpi" style="margin-bottom:24px">
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#e0f2fe">💰</div><div class="kpi-trend up">↑ +12%</div></div>
+            <div class="kpi-value">78 500 FCFA</div><div class="kpi-label">CA du jour</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#f0fdf4">📈</div><div class="kpi-trend up">↑ +8%</div></div>
+            <div class="kpi-value">1 240 000 FCFA</div><div class="kpi-label">Ventes du mois</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#fef9c3">👥</div><div class="kpi-trend up">↑ +5</div></div>
+            <div class="kpi-value">142</div><div class="kpi-label">Clients actifs</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#fef2f2">⚠️</div><div class="kpi-trend down">↓ -3%</div></div>
+            <div class="kpi-value">320 000 FCFA</div><div class="kpi-label">Créances impayées</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#f0fdf4">🫗</div><div class="kpi-trend" style="color:#94a3b8;background:#f8fafc">OK</div></div>
+            <div class="kpi-value">2 450</div><div class="kpi-label">Stock 0.5L (unités)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#fef2f2">🚨</div><div class="kpi-trend down">CRITIQUE</div></div>
+            <div class="kpi-value">45</div><div class="kpi-label">Stock 1.5L (unités)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#fff7ed">💸</div><div class="kpi-trend down">↑ +2%</div></div>
+            <div class="kpi-value">185 000 FCFA</div><div class="kpi-label">Dépenses du mois</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon" style="background:#f0fdf4">✨</div><div class="kpi-trend up">↑ +6%</div></div>
+            <div class="kpi-value">1 055 000 FCFA</div><div class="kpi-label">Résultat net</div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="grid-2" style="margin-bottom:24px">
+          <div class="gw-card">
+            <div class="card-header">
+              <div><div class="card-title">Ventes de la semaine</div><div class="card-subtitle">Évolution du CA quotidien</div></div>
+              <button class="btn btn-secondary btn-sm">7 jours</button>
+            </div>
+            <div class="card-body">
+              <div class="week-bars">
+                <div class="bar-wrap"><div class="bar" style="height:60%"></div><span class="bar-label">Lun</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:85%"></div><span class="bar-label">Mar</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:45%"></div><span class="bar-label">Mer</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:70%"></div><span class="bar-label">Jeu</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:95%"></div><span class="bar-label">Ven</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:100%"></div><span class="bar-label">Sam</span></div>
+                <div class="bar-wrap"><div class="bar" style="height:30%"></div><span class="bar-label">Dim</span></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9">
+                <div><div style="font-size:11px;color:#94a3b8">Total semaine</div><div style="font-size:16px;font-weight:700">425 000 FCFA</div></div>
+                <div style="text-align:right"><div style="font-size:11px;color:#94a3b8">Nb ventes</div><div style="font-size:16px;font-weight:700">48</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gw-card">
+            <div class="card-header"><div><div class="card-title">Top Clients</div><div class="card-subtitle">Par CA ce mois</div></div></div>
+            <div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc">
+                <div style="width:24px;height:24px;border-radius:50%;background:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">1</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:500">Restaurant La Palmeraie</div><div style="font-size:11px;color:#94a3b8">Restaurant</div></div>
+                <div style="text-align:right"><div style="font-size:13px;font-weight:600">180 000 FCFA</div><span class="badge badge-success">Payé</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc">
+                <div style="width:24px;height:24px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">2</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:500">Boutique Chez Mamadou</div><div style="font-size:11px;color:#94a3b8">Revendeur</div></div>
+                <div style="text-align:right"><div style="font-size:13px;font-weight:600">145 000 FCFA</div><span class="badge badge-warning">Crédit</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc">
+                <div style="width:24px;height:24px;border-radius:50%;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">3</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:500">Hôtel Le Soleil</div><div style="font-size:11px;color:#94a3b8">Institution</div></div>
+                <div style="text-align:right"><div style="font-size:13px;font-weight:600">120 000 FCFA</div><span class="badge badge-success">Payé</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px">
+                <div style="width:24px;height:24px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">4</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:500">SARL Distribution Alpha</div><div style="font-size:11px;color:#94a3b8">Entreprise</div></div>
+                <div style="text-align:right"><div style="font-size:13px;font-weight:600">95 000 FCFA</div><span class="badge badge-danger">Impayé</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="grid-2">
+          <div class="gw-card">
+            <div class="card-header">
+              <div class="card-title">Dernières ventes</div>
+              <a href="#" onclick="showPage('ventes')" style="font-size:12px;color:var(--gw-primary);text-decoration:none">Voir tout →</a>
+            </div>
+            <div class="gw-table-wrapper" style="border:none;border-radius:0">
+              <table class="gw-table">
+                <thead><tr><th>N° Facture</th><th>Client</th><th>Montant</th><th>Statut</th></tr></thead>
+                <tbody>
+                  <tr><td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">FAC-2026-00142</span></td><td>Restaurant La Palmeraie</td><td><strong>24 500 FCFA</strong></td><td><span class="badge badge-success"><span class="badge-dot"></span>Payée</span></td></tr>
+                  <tr><td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">FAC-2026-00141</span></td><td>Boutique Chez Mamadou</td><td><strong>18 000 FCFA</strong></td><td><span class="badge badge-warning"><span class="badge-dot"></span>Crédit</span></td></tr>
+                  <tr><td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">FAC-2026-00140</span></td><td>M. Ibrahima Diallo</td><td><strong>7 200 FCFA</strong></td><td><span class="badge badge-success"><span class="badge-dot"></span>Payée</span></td></tr>
+                  <tr><td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">FAC-2026-00139</span></td><td>Hôtel Le Soleil</td><td><strong>50 000 FCFA</strong></td><td><span class="badge badge-info"><span class="badge-dot"></span>Livrée</span></td></tr>
+                  <tr><td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">FAC-2026-00138</span></td><td>SARL Alpha</td><td><strong>95 000 FCFA</strong></td><td><span class="badge badge-danger"><span class="badge-dot"></span>Impayée</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="gw-card">
+            <div class="card-header"><div class="card-title">Activité récente</div></div>
+            <div>
+              <div style="display:flex;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc"><div style="width:32px;height:32px;border-radius:8px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;font-size:14px">🛒</div><div><div style="font-size:13px">Vente FAC-2026-00142 créée</div><div style="font-size:11px;color:#94a3b8">Il y a 5 min</div></div></div>
+              <div style="display:flex;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc"><div style="width:32px;height:32px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:14px">💰</div><div><div style="font-size:13px">Paiement 18 000 FCFA — Orange Money</div><div style="font-size:11px;color:#94a3b8">Il y a 20 min</div></div></div>
+              <div style="display:flex;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc"><div style="width:32px;height:32px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:14px">📦</div><div><div style="font-size:13px">Entrée stock : 500 bouteilles 0.5L</div><div style="font-size:11px;color:#94a3b8">Il y a 1h</div></div></div>
+              <div style="display:flex;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc"><div style="width:32px;height:32px;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;font-size:14px">👤</div><div><div style="font-size:13px">Nouveau client : Mme Aissatou Barry</div><div style="font-size:11px;color:#94a3b8">Il y a 2h</div></div></div>
+              <div style="display:flex;gap:12px;padding:12px 20px"><div style="width:32px;height:32px;border-radius:8px;background:#fef2f2;display:flex;align-items:center;justify-content:center;font-size:14px">⚠️</div><div><div style="font-size:13px">Stock bas : Eau 1.5L (45 unités)</div><div style="font-size:11px;color:#94a3b8">Il y a 3h</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTS PAGE -->
+      <div id="page-clients" style="display:none">
+        <div class="page-header">
+          <div><div class="page-title">Clients</div><div class="page-subtitle">6 client(s) affichés</div></div>
+          <div class="page-actions">
+            <button class="btn btn-secondary btn-sm">📥 Exporter</button>
+            <button class="btn btn-primary" onclick="showModal()">+ Nouveau client</button>
+          </div>
+        </div>
+        <div class="grid-kpi" style="margin-bottom:24px">
+          <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:#e0f2fe">👥</div></div><div class="kpi-value">142</div><div class="kpi-label">Total clients</div></div>
+          <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:#f0fdf4">✅</div></div><div class="kpi-value">128</div><div class="kpi-label">Clients actifs</div></div>
+          <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:#fffbeb">⏳</div></div><div class="kpi-value">23</div><div class="kpi-label">Avec crédit en cours</div></div>
+          <div class="kpi-card"><div class="kpi-top"><div class="kpi-icon" style="background:#fef2f2">💰</div></div><div class="kpi-value">320 000 FCFA</div><div class="kpi-label">Créances totales</div></div>
+        </div>
+        <div class="gw-table-wrapper">
+          <div style="padding:12px 16px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;height:34px;min-width:220px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Rechercher..." style="border:none;background:transparent;outline:none;font-size:13px;flex:1;font-family:inherit">
+            </div>
+            <select class="form-control" style="width:150px;height:34px"><option>Tous les types</option></select>
+            <select class="form-control" style="width:140px;height:34px"><option>Tous les statuts</option></select>
+            <div style="flex:1"></div>
+            <span style="font-size:12px;color:#94a3b8">6 résultat(s)</span>
+          </div>
+          <table class="gw-table">
+            <thead><tr><th>Code</th><th>Client</th><th>Type</th><th>Téléphone</th><th>Quartier</th><th>Grille</th><th>Solde crédit</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">CLI-0001</span></td>
+                <td><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">R</div><strong>Restaurant La Palmeraie</strong></div></td>
+                <td><span class="badge badge-secondary">Restaurant</span></td>
+                <td>+224 621 123 456</td><td>Kaloum</td>
+                <td><span class="badge badge-info">Gros</span></td>
+                <td style="color:#22c55e;font-weight:500">0 FCFA</td>
+                <td><span class="badge badge-success"><span class="badge-dot"></span>actif</span></td>
+                <td><div class="td-actions"><button class="btn btn-secondary btn-sm" onclick="showModal()">👁️</button><button class="btn btn-secondary btn-sm" onclick="showModal()">✏️</button></div></td>
+              </tr>
+              <tr>
+                <td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">CLI-0002</span></td>
+                <td><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">B</div><strong>Boutique Chez Mamadou</strong></div></td>
+                <td><span class="badge badge-secondary">Boutique</span></td>
+                <td>+224 622 234 567</td><td>Matoto</td>
+                <td><span class="badge badge-info">Revendeur</span></td>
+                <td style="color:#ef4444;font-weight:600">-45 000 FCFA</td>
+                <td><span class="badge badge-success"><span class="badge-dot"></span>actif</span></td>
+                <td><div class="td-actions"><button class="btn btn-secondary btn-sm" onclick="showModal()">👁️</button><button class="btn btn-secondary btn-sm" onclick="showModal()">✏️</button></div></td>
+              </tr>
+              <tr>
+                <td><span style="font-family:monospace;font-size:12px;color:#0ea5e9">CLI-0005</span></td>
+                <td><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:#ef4444;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">S</div><strong>SARL Distribution Alpha</strong></div></td>
+                <td><span class="badge badge-secondary">Entreprise</span></td>
+                <td>+224 625 567 890</td><td>Kaloum</td>
+                <td><span class="badge badge-info">Revendeur</span></td>
+                <td style="color:#ef4444;font-weight:600">-275 000 FCFA</td>
+                <td><span class="badge badge-warning"><span class="badge-dot"></span>suspendu</span></td>
+                <td><div class="td-actions"><button class="btn btn-secondary btn-sm" onclick="showModal()">👁️</button><button class="btn btn-secondary btn-sm" onclick="showModal()">✏️</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding:12px 16px;background:#fff;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8">
+            <span style="flex:1">Affichage 1–6 sur 6</span>
+            <button style="width:32px;height:32px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer">‹</button>
+            <button style="width:32px;height:32px;border-radius:6px;border:1px solid #0ea5e9;background:#0ea5e9;color:#fff;cursor:pointer">1</button>
+            <button style="width:32px;height:32px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other pages placeholder -->
+      <div id="page-ventes" style="display:none">
+        <div class="page-header"><div><div class="page-title">Ventes & Factures</div><div class="page-subtitle">Module complet dans l'appli Angular</div></div><div class="page-actions"><button class="btn btn-primary" id="btn-new-vente" onclick="showModal()">+ Nouvelle vente</button></div></div>
+        <div class="gw-alert alert-warning"><span class="alert-icon">ℹ️</span><div class="alert-content"><div class="alert-title">Module Ventes</div>Datatable complète, modale de création de vente avec lignes de produits, encaissement multi-moyens, PDF. Visualisez l'appli Angular sur <strong>localhost:4200</strong>.</div></div>
+      </div>
+      <div id="page-stock" style="display:none">
+        <div class="page-header"><div><div class="page-title">Stock & Produits</div></div></div>
+        <div class="gw-alert alert-warning"><span class="alert-icon">ℹ️</span><div class="alert-content"><div class="alert-title">Module Stock</div>Cartes produits avec jauges, mouvements, alertes de stock bas. Visualisez l'appli Angular sur <strong>localhost:4200</strong>.</div></div>
+      </div>
+      <div id="page-compta" style="display:none">
+        <div class="page-header"><div><div class="page-title">Comptabilité</div></div></div>
+        <div class="gw-alert alert-warning"><span class="alert-icon">ℹ️</span><div class="alert-content"><div class="alert-title">Module Comptabilité</div>Trésorerie, compte de résultat, balance âgée, dépenses. Visualisez l'appli Angular sur <strong>localhost:4200</strong>.</div></div>
+      </div>
+      <div id="page-admin" style="display:none">
+        <div class="page-header"><div><div class="page-title">Administration</div></div></div>
+        <div class="gw-alert alert-warning"><span class="alert-icon">ℹ️</span><div class="alert-content"><div class="alert-title">Module Admin</div>Gestion utilisateurs RBAC, journal d'audit, paramètres entreprise. Visualisez l'appli Angular sur <strong>localhost:4200</strong>.</div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL DÉMO -->
+<div class="gw-modal-backdrop" id="demo-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="gw-modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div><div class="modal-title">Nouveau client</div></div>
+      <button class="modal-close" onclick="document.getElementById('demo-modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group"><label>Nom / Raison sociale *</label><input class="form-control" placeholder="Prénom Nom ou Raison sociale"></div>
+        <div class="form-group"><label>Type de client *</label><select class="form-control"><option>Particulier</option><option>Boutique / Revendeur</option><option>Restaurant / Hôtel</option><option>Entreprise</option><option>Institution</option></select></div>
+        <div class="form-group"><label>Téléphone principal *</label><input class="form-control" placeholder="+224 XXX XXX XXX"></div>
+        <div class="form-group"><label>WhatsApp</label><input class="form-control" placeholder="+224 XXX XXX XXX"></div>
+        <div class="form-group"><label>Quartier *</label><input class="form-control" placeholder="Nom du quartier"></div>
+        <div class="form-group"><label>Adresse</label><input class="form-control" placeholder="Adresse complète"></div>
+        <div class="form-group"><label>Grille tarifaire *</label><select class="form-control"><option>Prix détail</option><option>Prix gros</option><option>Prix revendeur</option></select></div>
+        <div class="form-group"><label>Mode de paiement</label><select class="form-control"><option>Espèces</option><option>Orange Money</option><option>Wave</option><option>Crédit</option></select></div>
+        <div class="form-group"><label>Plafond de crédit (FCFA)</label><input type="number" class="form-control" placeholder="0"></div>
+        <div class="form-group"><label>Délai de paiement (jours)</label><input type="number" class="form-control" placeholder="30"></div>
+      </div>
+      <div class="form-group" style="margin-top:4px"><label>Notes</label><textarea class="form-control" rows="2" style="height:auto;padding:10px 12px" placeholder="Informations complémentaires..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('demo-modal').style.display='none'">Annuler</button>
+      <button class="btn btn-primary" onclick="document.getElementById('demo-modal').style.display='none';showToast('success','Client créé avec succès !')">Créer le client</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="gw-toast-container" id="toast-container"></div>
+
+<script>
+const pages = ['dashboard','clients','ventes','stock','compta','admin'];
+const titles = {dashboard:'Tableau de bord',clients:'Clients',ventes:'Ventes',stock:'Stock',compta:'Comptabilité',admin:'Administration'};
+
+function showPage(name) {
+  pages.forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) el.style.display = p === name ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  event?.currentTarget?.classList.add('active');
+  document.getElementById('bc-title').textContent = titles[name] || name;
+}
+
+function toggleSidebar() {
+  const sb = document.querySelector('.gw-sidebar');
+  const w = sb.style.width;
+  sb.style.width = (w === '72px') ? '260px' : '72px';
+  sb.style.overflow = 'hidden';
+}
+
+function showModal() {
+  document.getElementById('demo-modal').style.display = 'flex';
+}
+
+function showNewVente() {
+  setTimeout(showModal, 100);
+}
+
+let toastCount = 0;
+function showToast(type, msg) {
+  const container = document.getElementById('toast-container');
+  const id = 'toast-' + (++toastCount);
+  const icons = {success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  const toast = document.createElement('div');
+  toast.className = `gw-toast toast-${type}`;
+  toast.id = id;
+  toast.style.pointerEvents = 'all';
+  toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span style="flex:1">${msg}</span><span style="cursor:pointer;opacity:.6;margin-left:8px" onclick="document.getElementById('${id}').remove()">✕</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { const el = document.getElementById(id); if(el) el.remove(); }, 4000);
+}
+
+// Show welcome toast
+setTimeout(() => showToast('success', 'Bienvenue sur GWater ! Naviguez via le menu.'), 500);
+setTimeout(() => showToast('warning', 'Stock bas : Eau 1.5L — 45 unités'), 1500);
+</script>
+</body>
+</html>

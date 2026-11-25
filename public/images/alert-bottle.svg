@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 190" fill="none">
+  <defs>
+    <linearGradient id="alertBottleGlass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c9ebff" stop-opacity="0.94"/>
+      <stop offset="22%" stop-color="#ffffff" stop-opacity="0.97"/>
+      <stop offset="52%" stop-color="#a8dfff" stop-opacity="0.82"/>
+      <stop offset="82%" stop-color="#e4f5ff" stop-opacity="0.94"/>
+      <stop offset="100%" stop-color="#6ac4f8" stop-opacity="0.88"/>
+    </linearGradient>
+    <linearGradient id="alertCap" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#024cb3"/>
+      <stop offset="40%" stop-color="#1996f5"/>
+      <stop offset="72%" stop-color="#0b74f5"/>
+      <stop offset="100%" stop-color="#023b8c"/>
+    </linearGradient>
+    <linearGradient id="alertLabel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e4f2ff"/>
+      <stop offset="30%" stop-color="#ffffff"/>
+      <stop offset="72%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d5ebff"/>
+    </linearGradient>
+    <filter id="bottleDropShadow" x="-15%" y="-10%" width="130%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#7c4a03" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <!-- Subtle warm sparkle accents around cap -->
+  <circle cx="24" cy="24" r="3" fill="#f59e0b" opacity="0.5"/>
+  <circle cx="88" cy="30" r="2.5" fill="#fb923c" opacity="0.55"/>
+  <path d="M90 12 L94 6 M94 22 L101 20 M16 14 L11 9" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+
+  <g transform="translate(15, 10)" filter="url(#bottleDropShadow)">
+    <!-- Cap -->
+    <rect x="26" y="0" width="28" height="15" rx="4" fill="url(#alertCap)"/>
+    <rect x="24" y="14" width="32" height="4" rx="1.5" fill="#034db3"/>
+    <line x1="32" y1="2" x2="32" y2="13" stroke="#93c5fd" stroke-width="1" opacity="0.65"/>
+    <line x1="40" y1="2" x2="40" y2="13" stroke="#93c5fd" stroke-width="1" opacity="0.65"/>
+    <line x1="48" y1="2" x2="48" y2="13" stroke="#93c5fd" stroke-width="1" opacity="0.65"/>
+
+    <!-- Bottle Silhouette -->
+    <path d="M27 18 L53 18 L58 29 C70 39, 77 50, 77 66 L77 162 C77 171, 70 175, 60 175 L20 175 C10 175, 3 171, 3 162 L3 66 C3 50, 10 39, 22 29 Z" fill="url(#alertBottleGlass)" stroke="#60b7f0" stroke-width="1.2"/>
+
+    <!-- Glass Sheen -->
+    <path d="M12 52 C17 42, 23 35, 28 30 L28 166 C18 166, 12 162, 12 152 Z" fill="#ffffff" opacity="0.56"/>
+    <path d="M64 54 L70 61 L70 158 L64 164 Z" fill="#ffffff" opacity="0.34"/>
+
+    <!-- Structural Ribs -->
+    <path d="M6 62 Q40 67 74 62" stroke="#38bdf8" stroke-width="1.1" opacity="0.48"/>
+    <path d="M6 138 Q40 143 74 138" stroke="#38bdf8" stroke-width="1.1" opacity="0.48"/>
+    <path d="M6 151 Q40 156 74 151" stroke="#38bdf8" stroke-width="1.1" opacity="0.42"/>
+    <path d="M6 163 Q40 167 74 163" stroke="#38bdf8" stroke-width="1" opacity="0.35"/>
+
+    <!-- Label -->
+    <rect x="4" y="72" width="72" height="58" rx="3.5" fill="url(#alertLabel)"/>
+    <path d="M4 117 Q24 109 44 116 T76 113 L76 130 L4 130 Z" fill="#0ea5e9" opacity="0.18"/>
+    <!-- Droplet -->
+    <path d="M40 78 C40 78 33.5 87 33.5 91.5 C33.5 95.3 36.4 98 40 98 C43.6 98 46.5 95.3 46.5 91.5 C46.5 87 40 78 40 78 Z" fill="#0b74f5"/>
+    <ellipse cx="37.8" cy="90.5" rx="1.7" ry="3.3" fill="#ffffff" opacity="0.72" transform="rotate(-15 37.8 90.5)"/>
+    <text x="40" y="113" text-anchor="middle" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-weight="800" font-size="15.5" fill="#07224d" letter-spacing="-0.4">GWater</text>
+    <text x="40" y="124" text-anchor="middle" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-weight="600" font-size="6.8" fill="#0284c7">Pureté &amp; Vitalité</text>
+
+    <!-- Condensation Droplets -->
+    <circle cx="22" cy="48" r="2" fill="#ffffff" opacity="0.85"/>
+    <circle cx="62" cy="44" r="1.8" fill="#ffffff" opacity="0.8"/>
+    <circle cx="18" cy="145" r="2.1" fill="#ffffff" opacity="0.8"/>
+    <circle cx="58" cy="154" r="1.6" fill="#ffffff" opacity="0.75"/>
+  </g>
+</svg>
