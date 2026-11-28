@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
+const FR_NUMBER_FORMAT = new Intl.NumberFormat('fr-FR');
 
 @Component({
   selector: 'app-sales-donut-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; height: 100%; }
@@ -12,7 +13,7 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 14px;
+      gap: 16px;
       height: 100%;
     }
     .donut-ring {
@@ -37,7 +38,7 @@ import { CommonModule } from '@angular/common';
       pointer-events: none;
     }
     .donut-pct {
-      font-size: 23px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--gw-text);
       line-height: 1.05;
@@ -45,7 +46,7 @@ import { CommonModule } from '@angular/common';
       font-variant-numeric: tabular-nums;
     }
     .donut-sub {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--gw-text-secondary);
       margin-top: 2px;
@@ -53,7 +54,8 @@ import { CommonModule } from '@angular/common';
     .donut-legend {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+      min-width: 0;
     }
     .donut-leg-item {
       display: flex;
@@ -66,6 +68,9 @@ import { CommonModule } from '@angular/common';
       border-radius: 50%;
       margin-top: 4px;
       flex-shrink: 0;
+    }
+    .donut-leg-dot.is-15 {
+      border-radius: 2px;
     }
     .donut-leg-name {
       font-size: 13px;
@@ -82,20 +87,27 @@ import { CommonModule } from '@angular/common';
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
+    .donut-leg-amount {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--gw-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
   `],
   template: `
     <div class="donut-wrap">
       <div class="donut-ring">
-        <svg viewBox="0 0 140 140" width="142" height="142" role="img" [attr.aria-label]="'Répartition 0,5 L ' + displayPct05() + '% et 1,5 L ' + displayPct15() + '%'">
+        <svg viewBox="0 0 140 140" width="128" height="128" role="img" [attr.aria-label]="ariaSummary()">
           <!-- Background Track -->
           <circle cx="70" cy="70" [attr.r]="radius" fill="none" stroke="#e9f2fc" [attr.stroke-width]="strokeW"/>
 
-          <!-- 1,5 L Arc (Cyan) -->
+          <!-- 1,5 L Arc (Deep Teal) -->
           @if (arc15() > 0) {
             <circle
               cx="70" cy="70" [attr.r]="radius"
               fill="none"
-              stroke="#17c3eb"
+              stroke="#0d9488"
               [attr.stroke-width]="strokeW"
               [attr.stroke-dasharray]="arc15() + ' ' + circumference"
               [attr.stroke-dashoffset]="-offset15()"
@@ -107,7 +119,7 @@ import { CommonModule } from '@angular/common';
             <circle
               cx="70" cy="70" [attr.r]="radius"
               fill="none"
-              stroke="#0b74f5"
+              stroke="#0066e6"
               [attr.stroke-width]="strokeW"
               [attr.stroke-dasharray]="arc05() + ' ' + circumference"
               stroke-dashoffset="0"
@@ -123,18 +135,24 @@ import { CommonModule } from '@angular/common';
 
       <div class="donut-legend">
         <div class="donut-leg-item">
-          <span class="donut-leg-dot" style="background:#0b74f5"></span>
+          <span class="donut-leg-dot" style="background:#0066e6" aria-hidden="true"></span>
           <div>
             <div class="donut-leg-name">0,5 L</div>
             <div class="donut-leg-val">{{ displayPct05() }}%</div>
+            @if (total05L() > 0) {
+              <div class="donut-leg-amount">{{ formatFCFA(total05L()) }}</div>
+            }
           </div>
         </div>
 
         <div class="donut-leg-item">
-          <span class="donut-leg-dot" style="background:#17c3eb"></span>
+          <span class="donut-leg-dot is-15" style="background:#0d9488" aria-hidden="true"></span>
           <div>
             <div class="donut-leg-name">1,5 L</div>
             <div class="donut-leg-val">{{ displayPct15() }}%</div>
+            @if (total15L() > 0) {
+              <div class="donut-leg-amount">{{ formatFCFA(total15L()) }}</div>
+            }
           </div>
         </div>
       </div>
@@ -145,6 +163,8 @@ export class SalesDonutChartComponent {
   readonly pct05L = input.required<number>();
   readonly pct15L = input.required<number>();
   readonly hasData = input<boolean>(true);
+  readonly total05L = input<number>(0);
+  readonly total15L = input<number>(0);
 
   readonly radius = 52;
   readonly strokeW = 24;
@@ -152,6 +172,12 @@ export class SalesDonutChartComponent {
 
   readonly displayPct05 = computed(() => Math.round(Math.max(0, Math.min(100, this.pct05L()))));
   readonly displayPct15 = computed(() => Math.round(Math.max(0, Math.min(100, this.pct15L()))));
+
+  readonly ariaSummary = computed(() =>
+    this.hasData()
+      ? `Répartition des ventes : 0,5 L ${this.displayPct05()} % et 1,5 L ${this.displayPct15()} %`
+      : 'Aucune vente enregistrée pour calculer la répartition'
+  );
 
   readonly primaryPct = computed(() => {
     if (!this.hasData()) return 0;
@@ -179,4 +205,8 @@ export class SalesDonutChartComponent {
     const raw = (this.displayPct15() / 100) * this.circumference;
     return this.displayPct05() > 0 && this.displayPct15() > 0 ? Math.max(0, raw - 2.5) : raw;
   });
+
+  formatFCFA(n: number): string {
+    return `${FR_NUMBER_FORMAT.format(Math.round(Number.isFinite(n) ? n : 0))} FCFA`;
+  }
 }

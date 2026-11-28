@@ -6,7 +6,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class FcfaPipe implements PipeTransform {
   transform(value: number | null | undefined): string {
-    if (value == null || isNaN(value)) return '0 FCFA';
+    if (value == null || !Number.isFinite(value)) return '0 FCFA';
     const formatted = Math.round(value)
       .toString()
       .replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');

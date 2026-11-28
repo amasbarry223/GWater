@@ -6,8 +6,8 @@ import {
   Timestamp, serverTimestamp, runTransaction
 } from 'firebase/firestore';
 import { FirebaseStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Observable, Subject } from 'rxjs';
-import { map, shareReplay, takeUntil } from 'rxjs/operators';
+import { Observable, Subject, of } from 'rxjs';
+import { map, shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
   Client, Produit, MouvementStock, Vente, Paiement, Depense,
   Livreur, Livraison, AppSettings, DetteFournisseur, PrixHistorique, ConsigneMouvement
@@ -120,7 +120,7 @@ export class DataService {
   }
 
   async updateClient(id: string, data: Partial<Client>): Promise<void> {
-    await updateDoc(doc(this.db, 'clients', id), data as any);
+    await updateDoc(doc(this.db, 'clients', id), stripUndefined(data as any));
   }
 
   // ── Produits ───────────────────────────────────────────
@@ -256,23 +256,27 @@ export class DataService {
 
   // ── Ventes ─────────────────────────────────────────────
   getVentes(): Observable<Vente[]> {
-    const user = this.authService.currentUser;
-    const isVendeur = user?.role === 'vendeur';
-    const key = isVendeur ? `ventes:${user!.uid}` : 'ventes:all';
-    if (isVendeur) {
-      // Évite la nécessité d'un index composite (vendeurId + createdAt) en triant côté client
-      return this.cachedCollection<Vente>(key, () =>
-        query(collection(this.db, 'ventes'), where('vendeurId', '==', user!.uid), limit(200))
-      ).pipe(
-        map(list => [...list].sort((a, b) => {
-          const ta = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt || 0).getTime();
-          const tb = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt || 0).getTime();
-          return tb - ta;
-        }))
-      );
-    }
-    return this.cachedCollection<Vente>(key, () =>
-      query(collection(this.db, 'ventes'), orderBy('createdAt', 'desc'), limit(200))
+    return this.authService.currentUser$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        const isVendeur = user.role === 'vendeur';
+        const key = isVendeur ? `ventes:${user.uid}` : 'ventes:all';
+        if (isVendeur) {
+          // Évite la nécessité d'un index composite (vendeurId + createdAt) en triant côté client
+          return this.cachedCollection<Vente>(key, () =>
+            query(collection(this.db, 'ventes'), where('vendeurId', '==', user.uid), limit(1000))
+          ).pipe(
+            map(list => [...list].sort((a, b) => {
+              const ta = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt || 0).getTime();
+              const tb = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt || 0).getTime();
+              return tb - ta;
+            }))
+          );
+        }
+        return this.cachedCollection<Vente>(key, () =>
+          query(collection(this.db, 'ventes'), orderBy('createdAt', 'desc'), limit(1000))
+        );
+      })
     );
   }
 
@@ -447,7 +451,7 @@ export class DataService {
   }
 
   async updateVente(id: string, data: Partial<Vente>): Promise<void> {
-    await updateDoc(doc(this.db, 'ventes', id), data as any);
+    await updateDoc(doc(this.db, 'ventes', id), stripUndefined(data as any));
   }
 
   async annulerVente(vente: Vente, motif: string): Promise<void> {
@@ -509,7 +513,7 @@ export class DataService {
   // ── Paiements (atomique avec vente + solde client) ─────
   getPaiements(): Observable<Paiement[]> {
     return this.cachedCollection<Paiement>('paiements', () =>
-      query(collection(this.db, 'paiements'), orderBy('createdAt', 'desc'), limit(200))
+      query(collection(this.db, 'paiements'), orderBy('createdAt', 'desc'), limit(1000))
     );
   }
 
@@ -581,12 +585,12 @@ export class DataService {
   // ── Dépenses ──────────────────────────────────────────
   getDepenses(): Observable<Depense[]> {
     return this.cachedCollection<Depense>('depenses', () =>
-      query(collection(this.db, 'depenses'), orderBy('createdAt', 'desc'), limit(200))
+      query(collection(this.db, 'depenses'), orderBy('createdAt', 'desc'), limit(1000))
     );
   }
 
   async addDepense(data: Omit<Depense, 'id'>): Promise<string> {
-    const periode = data.periode || new Date().toISOString().slice(0, 7);
+    const periode = data.periode || this.localYearMonth();
     const pSnap = await getDoc(doc(this.db, 'periodes_comptables', periode));
     if (pSnap.exists() && (pSnap.data() as any)['statut'] === 'cloturee') {
       throw new Error(`PERIODE_CLOTUREE:${periode}`);
@@ -632,7 +636,7 @@ export class DataService {
     const operateur = user?.displayName || 'Comptable';
     const detteRef = doc(this.db, 'dettes_fournisseurs', dette.id);
     const depenseRef = doc(collection(this.db, 'depenses'));
-    const periode = new Date().toISOString().slice(0, 7);
+    const periode = this.localYearMonth();
 
     await runTransaction(this.db, async (tx) => {
       const snap = await tx.get(detteRef);
@@ -732,13 +736,13 @@ export class DataService {
   }
 
   async updateLivreur(id: string, data: Partial<Livreur>): Promise<void> {
-    await updateDoc(doc(this.db, 'livreurs', id), data as any);
+    await updateDoc(doc(this.db, 'livreurs', id), stripUndefined(data as any));
   }
 
   // ── Livraisons (Firestore) ────────────────────────────
   getLivraisons(): Observable<Livraison[]> {
     return this.cachedCollection<Livraison>('livraisons', () =>
-      query(collection(this.db, 'livraisons'), orderBy('createdAt', 'desc'), limit(200))
+      query(collection(this.db, 'livraisons'), orderBy('createdAt', 'desc'), limit(1000))
     );
   }
 
@@ -749,10 +753,13 @@ export class DataService {
   }
 
   async updateLivraison(id: string, data: Partial<Livraison>): Promise<void> {
-    await updateDoc(doc(this.db, 'livraisons', id), { ...data, updatedAt: serverTimestamp() } as any);
+    await updateDoc(doc(this.db, 'livraisons', id), { ...stripUndefined(data as any), updatedAt: serverTimestamp() });
   }
 
   // ── Utils ─────────────────────────────────────────────
+  private localYearMonth(d = new Date()): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
   formatFCFA(amount: number): string {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 })
       .format(amount);

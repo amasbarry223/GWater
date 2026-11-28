@@ -46,13 +46,18 @@ interface SearchHit {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, AsyncPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+  },
   template: `
 <div class="gw-layout">
+  <a class="skip-link" href="#main-content">Aller au contenu principal</a>
+
   <!-- Mobile Drawer Backdrop -->
   <div class="sidebar-mobile-backdrop" [class.open]="mobileOpen()" (click)="mobileOpen.set(false)"></div>
 
   <!-- SIDEBAR -->
-  <aside class="gw-sidebar" [class.collapsed]="collapsed()" [class.mobile-open]="mobileOpen()">
+  <aside class="gw-sidebar" aria-label="Menu latéral" [class.collapsed]="collapsed()" [class.mobile-open]="mobileOpen()">
     <!-- Brand -->
     <div class="sidebar-brand">
       <div class="brand-droplet" aria-hidden="true">
@@ -151,23 +156,23 @@ interface SearchHit {
 
     <!-- Footer User Chip -->
     <div class="sidebar-footer">
-      <div class="user-card" role="button" tabindex="0" (click)="showProfileModal.set(true)" (keydown.enter)="showProfileModal.set(true)">
-        <div class="user-avatar">{{ userInitials() }}</div>
+      <button type="button" class="user-card" (click)="showProfileModal.set(true)" aria-label="Ouvrir mon profil">
+        <div class="user-avatar" aria-hidden="true">{{ userInitials() }}</div>
         <div class="user-info">
-          <div class="user-name">{{ authService.currentUser?.displayName || 'Super Admin' }}</div>
+          <div class="user-name">{{ authService.currentUser?.displayName || 'Utilisateur' }}</div>
           <div class="user-role">{{ roleLabel() }}</div>
         </div>
-        <svg class="user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
-      </div>
+      </button>
     </div>
   </aside>
 
   <!-- MAIN AREA -->
   <div class="gw-main" [class.is-dashboard]="isDashboardRoute()">
     <header class="gw-header">
-      <button type="button" class="header-toggle" (click)="mobileOpen.set(!mobileOpen())" aria-label="Ouvrir le menu">
+      <button type="button" class="header-toggle" (click)="mobileOpen.set(!mobileOpen())" [attr.aria-expanded]="mobileOpen()" aria-label="Ouvrir le menu">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
         </svg>
@@ -187,9 +192,9 @@ interface SearchHit {
                (input)="onSearch()"
                (focus)="onSearch()">
         @if (searchResults().length > 0) {
-          <div class="gw-dropdown" style="left:0;right:auto;top:46px;width:340px;max-height:300px;overflow-y:auto;z-index:220">
+          <div class="gw-dropdown" role="listbox" aria-label="Résultats de recherche" style="left:0;right:auto;top:46px;width:340px;max-height:300px;overflow-y:auto;z-index:220">
             @for (res of searchResults(); track res.label + res.sub) {
-              <div class="dd-item" (click)="goToResult(res.route)">
+              <button type="button" class="dd-item" role="option" (click)="goToResult(res.route)">
                 <span style="width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0"
                       [style.background]="res.kind === 'client' ? '#efeaff' : res.kind === 'vente' ? '#e5f3ff' : '#e6fbf1'"
                       [style.color]="res.kind === 'client' ? '#6d28d9' : res.kind === 'vente' ? '#0b66f5' : '#0d9f6e'">
@@ -197,9 +202,9 @@ interface SearchHit {
                 </span>
                 <div style="min-width:0">
                   <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ res.label }}</div>
-                  <div style="font-size:11px;color:#7c90a9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ res.sub }}</div>
+                  <div style="font-size:11px;color:var(--gw-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ res.sub }}</div>
                 </div>
-              </div>
+              </button>
             }
           </div>
         }
@@ -227,15 +232,15 @@ interface SearchHit {
                 <span class="badge" [class]="stockAlertes().length > 0 ? 'badge-danger' : 'badge-success'">{{ stockAlertes().length }}</span>
               </div>
               @for (p of stockAlertes(); track p.id) {
-                <div class="dd-item" (click)="showNotifs.set(false); router.navigate(['/stock'])">
-                  <span style="width:28px;height:28px;border-radius:8px;background:#fff3dc;color:#d97706;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+                <button type="button" class="dd-item" (click)="showNotifs.set(false); router.navigate(['/stock'])">
+                  <span style="width:28px;height:28px;border-radius:8px;background:#fff3dc;color:#b45309;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" aria-hidden="true">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                   </span>
                   <div>
                     <div style="font-size:12.5px;font-weight:600;color:var(--gw-text)">{{ p.nom }}</div>
-                    <div style="font-size:11px;color:#cf2e2e">{{ p.stock }} {{ p.unite }} restant(s) (seuil : {{ p.seuilAlerte }})</div>
+                    <div style="font-size:11px;color:#b91c1c">{{ p.stock }} {{ p.unite }} restant(s) (seuil : {{ p.seuilAlerte }})</div>
                   </div>
-                </div>
+                </button>
               }
               @if (stockAlertes().length === 0) {
                 <div style="padding:18px 12px;text-align:center;color:var(--gw-muted);font-size:12.5px">
@@ -248,38 +253,38 @@ interface SearchHit {
 
         <!-- User Pill Dropdown -->
         <div style="position:relative">
-          <button type="button" class="header-user-pill" (click)="showUserDd.set(!showUserDd()); showNotifs.set(false)">
-            <span class="header-user-avatar">{{ userInitials() }}</span>
-            <span class="header-user-name">{{ authService.currentUser?.displayName || 'Super Admin' }}</span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#6c829d">
+          <button type="button" class="header-user-pill" (click)="showUserDd.set(!showUserDd()); showNotifs.set(false)" [attr.aria-expanded]="showUserDd()" aria-haspopup="menu">
+            <span class="header-user-avatar" aria-hidden="true">{{ userInitials() }}</span>
+            <span class="header-user-name">{{ authService.currentUser?.displayName || 'Utilisateur' }}</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#556982" aria-hidden="true">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
 
           @if (showUserDd()) {
-            <div class="gw-dropdown" style="z-index:220">
-              <div class="dd-item" (click)="showUserDd.set(false); showProfileModal.set(true)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div class="gw-dropdown" role="menu" style="z-index:220">
+              <button type="button" class="dd-item" role="menuitem" (click)="showUserDd.set(false); showProfileModal.set(true)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span>Mon profil</span>
-              </div>
+              </button>
               @if (authService.hasRole('superadmin', 'admin')) {
-                <div class="dd-item" (click)="showUserDd.set(false); router.navigate(['/admin'])">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <button type="button" class="dd-item" role="menuitem" (click)="showUserDd.set(false); router.navigate(['/admin'])">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                   <span>Administration</span>
-                </div>
+                </button>
               }
               <div class="dd-divider"></div>
-              <div class="dd-item danger" (click)="logout()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <button type="button" class="dd-item danger" role="menuitem" (click)="logout()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 <span>Déconnexion</span>
-              </div>
+              </button>
             </div>
           }
         </div>
       </div>
     </header>
 
-    <main class="gw-content">
+    <main id="main-content" class="gw-content" tabindex="-1">
       <router-outlet />
     </main>
   </div>
@@ -321,9 +326,9 @@ interface SearchHit {
 <!-- MODAL MON PROFIL -->
 @if (showProfileModal()) {
   <div class="gw-modal-backdrop" (click)="showProfileModal.set(false)">
-    <div class="gw-modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="gw-modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-title">Mon profil</div>
+        <h2 id="profile-modal-title" class="modal-title" style="margin:0">Mon profil</h2>
         <button type="button" class="modal-close" aria-label="Fermer" (click)="showProfileModal.set(false)">✕</button>
       </div>
       <div class="modal-body">
@@ -359,12 +364,12 @@ interface SearchHit {
 }
 
 <!-- TOAST CONTAINER -->
-<div class="gw-toast-container">
+<div class="gw-toast-container" aria-live="polite" aria-atomic="true">
   @for (toast of (toastService.toasts$ | async); track toast.id) {
     <div class="gw-toast" [class]="'toast-' + toast.type" [class.toast-leave]="toast.leaving">
-      <span class="toast-icon">{{ toastIcon(toast.type) }}</span>
+      <span class="toast-icon" aria-hidden="true">{{ toastIcon(toast.type) }}</span>
       <span class="toast-text">{{ toast.message }}</span>
-      <span class="toast-close" (click)="toastService.dismiss(toast.id)">✕</span>
+      <button type="button" class="toast-close" aria-label="Fermer la notification" (click)="toastService.dismiss(toast.id)">✕</button>
     </div>
   }
 </div>
@@ -541,6 +546,12 @@ export class LayoutComponent implements OnInit {
     this.searchQuery = '';
     this.searchResults.set([]);
     this.router.navigate([route]);
+  }
+
+  onEscape(): void {
+    this.closeOverlays();
+    this.showProfileModal.set(false);
+    this.mobileOpen.set(false);
   }
 
   closeOverlays(): void {

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 export type EvolutionPeriod = '7d' | '30d';
 
@@ -10,10 +9,13 @@ interface ChartPoint {
   label: string;
 }
 
+const FR_NUMBER_FORMAT = new Intl.NumberFormat('fr-FR');
+let nextChartInstanceId = 0;
+
 @Component({
   selector: 'app-sales-evolution-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; height: 100%; }
@@ -45,12 +47,13 @@ interface ChartPoint {
       height: 28px;
       border-radius: 8px;
       background: #e8f3ff;
-      color: #0b66f5;
+      color: #0066e6;
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
     .evo-title {
+      margin: 0;
       font-size: 15.5px;
       font-weight: 700;
       color: var(--gw-text);
@@ -66,20 +69,24 @@ interface ChartPoint {
       background-color: #f6faff;
       border: 1px solid #d9e7f6;
       border-radius: 9px;
-      padding: 5px 28px 5px 11px;
+      padding: 6px 28px 6px 11px;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 600;
       color: var(--gw-text-secondary);
       cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%235a6e87' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23475d79' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 9px center;
       transition: border-color 0.15s;
     }
-    .evo-select:hover, .evo-select:focus {
+    .evo-select:hover {
       border-color: var(--gw-ocean-500);
-      outline: none;
+    }
+    .evo-select:focus-visible {
+      border-color: var(--gw-ocean-500);
+      outline: 2px solid var(--gw-ocean-500);
+      outline-offset: 2px;
     }
     .evo-legend {
       display: flex;
@@ -96,10 +103,16 @@ interface ChartPoint {
       align-items: center;
       gap: 6px;
     }
-    .legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
+    .legend-swatch-05 {
+      width: 14px;
+      height: 3px;
+      border-radius: 999px;
+      background: #0066e6;
+    }
+    .legend-swatch-15 {
+      width: 14px;
+      height: 0;
+      border-top: 3px dashed #0d9488;
     }
     .evo-canvas {
       position: relative;
@@ -118,20 +131,28 @@ interface ChartPoint {
       stroke-width: 1;
     }
     .axis-label {
-      fill: #7b90aa;
+      fill: #52667d;
       font-size: 11px;
       font-weight: 500;
       font-family: inherit;
     }
     .data-dot {
-      cursor: pointer;
+      pointer-events: none;
       transition: r 0.12s ease;
+    }
+    .hit-col {
+      fill: transparent;
+      cursor: pointer;
+    }
+    .hit-col:focus-visible {
+      outline: 2px solid var(--gw-ocean-500);
+      outline-offset: -2px;
     }
     .evo-tooltip {
       position: absolute;
       top: 6px;
-      left: 52px;
-      background: rgba(8, 32, 74, 0.94);
+      transform: translateX(-50%);
+      background: rgba(8, 32, 74, 0.95);
       color: #ffffff;
       border-radius: 10px;
       padding: 8px 12px;
@@ -142,11 +163,29 @@ interface ChartPoint {
       flex-direction: column;
       gap: 3px;
       z-index: 5;
+      white-space: nowrap;
     }
     .evo-tooltip-day {
       font-weight: 700;
       color: #93c5fd;
       margin-bottom: 1px;
+    }
+    .evo-empty {
+      position: absolute;
+      inset: 14px 18px 26px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .evo-empty-pill {
+      background: rgba(241, 247, 254, 0.94);
+      border: 1px solid #d5e5f6;
+      color: var(--gw-text-secondary);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
     }
   `],
   template: `
@@ -158,7 +197,7 @@ interface ChartPoint {
               <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
           </span>
-          <span class="evo-title">Évolution des Ventes</span>
+          <h2 class="evo-title">Évolution des Ventes</h2>
         </div>
 
         <div class="evo-controls">
@@ -172,11 +211,11 @@ interface ChartPoint {
 
       <div class="evo-legend">
         <span class="legend-item">
-          <span class="legend-dot" style="background:#0b74f5"></span>
+          <span class="legend-swatch-05" aria-hidden="true"></span>
           <span>0,5 L</span>
         </span>
         <span class="legend-item">
-          <span class="legend-dot" style="background:#17bde8"></span>
+          <span class="legend-swatch-15" aria-hidden="true"></span>
           <span>1,5 L</span>
         </span>
       </div>
@@ -184,27 +223,33 @@ interface ChartPoint {
       <div class="evo-canvas" (mouseleave)="hoveredIndex.set(null)">
         @if (hoveredIndex() !== null) {
           @let idx = hoveredIndex()!;
-          <div class="evo-tooltip tabular-nums">
+          <div class="evo-tooltip tabular-nums" [style.left.%]="tooltipLeftPct()">
             <div class="evo-tooltip-day">{{ labels()[idx] }}</div>
             <div>0,5 L : <strong>{{ formatFCFA(series05L()[idx] || 0) }}</strong></div>
             <div>1,5 L : <strong>{{ formatFCFA(series15L()[idx] || 0) }}</strong></div>
           </div>
         }
 
-        <svg class="evo-svg" [attr.viewBox]="'0 0 ' + width + ' ' + height" preserveAspectRatio="none" role="img" aria-label="Graphique d'évolution des ventes 0,5 L et 1,5 L">
+        @if (!hasData()) {
+          <div class="evo-empty">
+            <span class="evo-empty-pill">Aucune vente enregistrée sur cette période</span>
+          </div>
+        }
+
+        <svg class="evo-svg" [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" aria-label="Graphique d'évolution des ventes 0,5 L et 1,5 L">
           <defs>
-            <linearGradient id="gwGrad05" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0b74f5" stop-opacity="0.22"/>
-              <stop offset="100%" stop-color="#0b74f5" stop-opacity="0.01"/>
+            <linearGradient [attr.id]="grad05Id" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0066e6" stop-opacity="0.22"/>
+              <stop offset="100%" stop-color="#0066e6" stop-opacity="0.01"/>
             </linearGradient>
-            <linearGradient id="gwGrad15" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#17bde8" stop-opacity="0.18"/>
-              <stop offset="100%" stop-color="#17bde8" stop-opacity="0.01"/>
+            <linearGradient [attr.id]="grad15Id" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0d9488" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#0d9488" stop-opacity="0.01"/>
             </linearGradient>
           </defs>
 
           <!-- Horizontal gridlines & Y ticks -->
-          @for (tick of yTicks(); track tick.label) {
+          @for (tick of yTicks(); track $index) {
             <line class="grid-line" [attr.x1]="padLeft" [attr.y1]="tick.y" [attr.x2]="width - padRight" [attr.y2]="tick.y"/>
             <text class="axis-label" [attr.x]="padLeft - 10" [attr.y]="tick.y + 4" text-anchor="end">{{ tick.label }}</text>
           }
@@ -217,18 +262,18 @@ interface ChartPoint {
 
           <!-- Area fills -->
           @if (area15L()) {
-            <path [attr.d]="area15L()" fill="url(#gwGrad15)"/>
+            <path [attr.d]="area15L()" [attr.fill]="'url(#' + grad15Id + ')'"/>
           }
           @if (area05L()) {
-            <path [attr.d]="area05L()" fill="url(#gwGrad05)"/>
+            <path [attr.d]="area05L()" [attr.fill]="'url(#' + grad05Id + ')'"/>
           }
 
-          <!-- Smooth spline strokes -->
+          <!-- Smooth spline strokes (solid for 0,5 L, dashed for 1,5 L) -->
           @if (path15L()) {
-            <path [attr.d]="path15L()" fill="none" stroke="#17bde8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path [attr.d]="path15L()" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round"/>
           }
           @if (path05L()) {
-            <path [attr.d]="path05L()" fill="none" stroke="#0b74f5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path [attr.d]="path05L()" fill="none" stroke="#0066e6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
           }
 
           <!-- Hover highlight line -->
@@ -238,36 +283,53 @@ interface ChartPoint {
               [attr.y1]="padTop"
               [attr.x2]="points05L()[hoveredIndex()!].x"
               [attr.y2]="plotBottom"
-              stroke="#0b74f5"
+              stroke="#0066e6"
               stroke-width="1"
               stroke-dasharray="3 3"
               stroke-opacity="0.55"/>
           }
 
-          <!-- Data markers 1,5 L -->
+          <!-- Data markers 1,5 L (squares for shape differentiation) -->
           @for (pt of points15L(); track $index) {
-            <circle
+            @let size = hoveredIndex() === $index ? 9 : 7;
+            <rect
               class="data-dot"
-              [attr.cx]="pt.x"
-              [attr.cy]="pt.y"
-              [attr.r]="hoveredIndex() === $index ? 5.5 : 4"
-              fill="#17bde8"
+              [attr.x]="pt.x - size / 2"
+              [attr.y]="pt.y - size / 2"
+              [attr.width]="size"
+              [attr.height]="size"
+              rx="1.5"
+              fill="#0d9488"
               stroke="#ffffff"
-              stroke-width="2"
-              (mouseenter)="hoveredIndex.set($index)"/>
+              stroke-width="2"/>
           }
 
-          <!-- Data markers 0,5 L -->
+          <!-- Data markers 0,5 L (circles) -->
           @for (pt of points05L(); track $index) {
             <circle
               class="data-dot"
               [attr.cx]="pt.x"
               [attr.cy]="pt.y"
               [attr.r]="hoveredIndex() === $index ? 5.5 : 4"
-              fill="#0b74f5"
+              fill="#0066e6"
               stroke="#ffffff"
-              stroke-width="2"
-              (mouseenter)="hoveredIndex.set($index)"/>
+              stroke-width="2"/>
+          }
+
+          <!-- Accessible full-height hit columns -->
+          @for (pt of points05L(); track $index) {
+            <rect
+              class="hit-col"
+              [attr.x]="pt.x - hitColWidth() / 2"
+              [attr.y]="padTop"
+              [attr.width]="hitColWidth()"
+              [attr.height]="plotHeight"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="pointAriaLabel($index)"
+              (mouseenter)="hoveredIndex.set($index)"
+              (focus)="hoveredIndex.set($index)"
+              (blur)="hoveredIndex.set(null)"/>
           }
         </svg>
       </div>
@@ -283,6 +345,10 @@ export class SalesEvolutionChartComponent {
 
   readonly hoveredIndex = signal<number | null>(null);
 
+  private readonly instanceId = ++nextChartInstanceId;
+  readonly grad05Id = `gwGrad05_${this.instanceId}`;
+  readonly grad15Id = `gwGrad15_${this.instanceId}`;
+
   readonly width = 620;
   readonly height = 215;
   readonly padLeft = 48;
@@ -293,8 +359,29 @@ export class SalesEvolutionChartComponent {
   readonly plotHeight = this.height - this.padTop - this.padBottom;
   readonly plotWidth = this.width - this.padLeft - this.padRight;
 
+  readonly hasData = computed(() =>
+    this.series05L().some(v => Number.isFinite(v) && v > 0) ||
+    this.series15L().some(v => Number.isFinite(v) && v > 0)
+  );
+
+  readonly hitColWidth = computed(() => {
+    const count = Math.max(1, this.labels().length);
+    return Math.max(24, this.plotWidth / count);
+  });
+
+  readonly tooltipLeftPct = computed(() => {
+    const idx = this.hoveredIndex();
+    if (idx === null) return 50;
+    const pt = this.points05L()[idx];
+    if (!pt) return 50;
+    const rawPct = (pt.x / this.width) * 100;
+    return Math.max(18, Math.min(82, rawPct));
+  });
+
   readonly maxScale = computed(() => {
-    const rawMax = Math.max(0, ...this.series05L(), ...this.series15L());
+    const clean05 = this.series05L().map(v => (Number.isFinite(v) ? Math.max(0, v) : 0));
+    const clean15 = this.series15L().map(v => (Number.isFinite(v) ? Math.max(0, v) : 0));
+    const rawMax = Math.max(0, ...clean05, ...clean15);
     if (rawMax <= 0) return 1_000_000;
     const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
     const step = magnitude / 2;
@@ -326,19 +413,27 @@ export class SalesEvolutionChartComponent {
     this.periodChange.emit(val);
   }
 
+  pointAriaLabel(idx: number): string {
+    const label = this.labels()[idx] || '';
+    const v05 = this.formatFCFA(this.series05L()[idx] || 0);
+    const v15 = this.formatFCFA(this.series15L()[idx] || 0);
+    return `${label} : 0,5 L ${v05}, 1,5 L ${v15}`;
+  }
+
   formatFCFA(n: number): string {
-    return `${new Intl.NumberFormat('fr-FR').format(Math.round(n))} FCFA`;
+    return `${FR_NUMBER_FORMAT.format(Math.round(Number.isFinite(n) ? n : 0))} FCFA`;
   }
 
   private formatShort(val: number): string {
     if (val <= 0) return '0';
     if (val >= 1_000_000) {
       const m = val / 1_000_000;
-      return `${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+      const s = Number.isInteger(m) ? String(m) : m.toFixed(1).replace('.', ',');
+      return `${s} M`;
     }
     if (val >= 1_000) {
       const k = val / 1_000;
-      return `${Number.isInteger(k) ? k : Math.round(k)}k`;
+      return `${Number.isInteger(k) ? k : Math.round(k)} k`;
     }
     return String(Math.round(val));
   }
@@ -348,7 +443,8 @@ export class SalesEvolutionChartComponent {
     const max = this.maxScale();
     const count = Math.max(1, lbls.length);
     return lbls.map((label, i) => {
-      const value = values[i] ?? 0;
+      const raw = values[i] ?? 0;
+      const value = Number.isFinite(raw) ? Math.max(0, raw) : 0;
       const x = count === 1
         ? this.padLeft + this.plotWidth / 2
         : this.padLeft + (i / (count - 1)) * this.plotWidth;
@@ -361,7 +457,7 @@ export class SalesEvolutionChartComponent {
   private buildSmoothPath(pts: ChartPoint[]): string {
     if (pts.length === 0) return '';
     if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
-    let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
     for (let i = 0; i < pts.length - 1; i++) {
       const p0 = pts[Math.max(0, i - 1)];
       const p1 = pts[i];
@@ -376,10 +472,10 @@ export class SalesEvolutionChartComponent {
     return d;
   }
 
-  private buildAreaPath(pts: ChartPoint[], strokePath: string): string {
-    if (pts.length < 2 || !strokePath) return '';
-    const first = pts[0];
+  private buildAreaPath(pts: ChartPoint[], linePath: string): string {
+    if (pts.length < 2 || !linePath) return '';
     const last = pts[pts.length - 1];
-    return `${strokePath} L ${last.x.toFixed(1)} ${this.plotBottom} L ${first.x.toFixed(1)} ${this.plotBottom} Z`;
+    const first = pts[0];
+    return `${linePath} L ${last.x.toFixed(1)} ${this.plotBottom} L ${first.x.toFixed(1)} ${this.plotBottom} Z`;
   }
 }
